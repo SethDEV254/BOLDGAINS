@@ -109,7 +109,7 @@ function LoginForm() {
         </div>
 
         <p className="text-center text-gray-600 text-xs mt-6">
-          Admin: admin@boldgains.com / admin123
+          Admin: admin@boldgains.com / Wealth@2026
         </p>
       </div>
     </div>

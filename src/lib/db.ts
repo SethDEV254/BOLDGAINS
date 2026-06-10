@@ -73,7 +73,7 @@ function initDb(db: Database.Database) {
   const admin = db.prepare('SELECT id FROM users WHERE role = ?').get('admin');
   if (!admin) {
     const bcrypt = require('bcryptjs');
-    const hash = bcrypt.hashSync('admin123', 10);
+    const hash = bcrypt.hashSync('Wealth@2026', 10);
     db.prepare(`
       INSERT INTO users (name, email, password_hash, referral_code, role, package_level, wallet_balance)
       VALUES (?, ?, ?, ?, ?, ?, ?)
