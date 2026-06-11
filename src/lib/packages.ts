@@ -29,7 +29,7 @@ export const BONUS_RATES = {
   upgrade_bonus: 0.30,
   leadership_pool: 0.10,
   network_level: 0.10,
-  products: 0.20,
+  products: 0.10,
 };
 
 export const NETWORK_LEVEL_DISTRIBUTION = [0.04, 0.03, 0.02, 0.01]; // levels 1-4
