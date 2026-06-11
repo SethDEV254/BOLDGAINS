@@ -141,7 +141,7 @@ export default function ReportsPage() {
                 <Tooltip
                   contentStyle={{ background: '#0a0600', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 12, color: '#fff' }}
                   labelFormatter={v => new Date(v).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  formatter={(v: any, name: string) => [v, name === 'total' ? 'Total Members' : 'New Today']}
+                  formatter={(v: any, name: any) => [v, name === 'total' ? 'Total Members' : 'New Today']}
                 />
                 <ReferenceLine y={peak} stroke="rgba(16,185,129,0.2)" strokeDasharray="4 4" />
                 <Line type="monotone" dataKey="total" name="total"
