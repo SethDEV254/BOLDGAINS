@@ -15,7 +15,7 @@ const BONUS_FEATURES = [
   { icon: TrendingUp, label: 'Upgrade Bonus', value: '30%', desc: 'Paid when your referrals upgrade tiers', color: '#f59e0b' },
   { icon: Award, label: 'Leadership Pool', value: '10%', desc: 'Exclusive pool shared by top leaders', color: '#b45309' },
   { icon: Users, label: 'Network Level', value: '10%', desc: 'Earn across 4 levels of your network', color: '#d97706' },
-  { icon: Star, label: 'Products Bonus', value: '10%', desc: 'Allocated to product distribution rewards', color: '#fbbf24' },
+  { icon: Star, label: 'Products Bonus', value: '20%', desc: 'Allocated to product distribution rewards', color: '#fbbf24' },
 ];
 
 const TIER_ICONS: Record<number, any> = { 9: Diamond, 10: Crown, 11: Flame };
