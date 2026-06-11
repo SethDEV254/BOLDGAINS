@@ -5,6 +5,7 @@ import { Loader2, TrendingUp, Users, DollarSign, Package, BarChart2, PieChart as
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend,
+  LineChart, Line, ReferenceLine,
 } from 'recharts';
 import { PACKAGES } from '@/lib/packages';
 
@@ -101,6 +102,72 @@ export default function ReportsPage() {
         )}
       </div>
 
+      {/* Cumulative member growth line chart */}
+      <div className="glass rounded-2xl p-6 gold-border-glow">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-white font-bold flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-emerald-400" /> Cumulative Growth (Last 30 days)
+          </h3>
+          {growth.byDay?.length > 0 && (
+            <span className="text-xs px-3 py-1 rounded-full font-semibold"
+              style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399', border: '1px solid rgba(16,185,129,0.25)' }}>
+              +{growth.byDay.reduce((s: number, d: any) => s + d.count, 0)} members
+            </span>
+          )}
+        </div>
+        {growth.byDay?.length > 0 ? (() => {
+          let running = 0;
+          const cumulativeData = growth.byDay.map((d: any) => {
+            running += d.count;
+            return { day: d.day, total: running, daily: d.count };
+          });
+          const peak = Math.max(...cumulativeData.map((d: any) => d.total));
+          return (
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={cumulativeData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="lineGlow" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="50%" stopColor="#34d399" />
+                    <stop offset="100%" stopColor="#6ee7b7" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 11 }}
+                  tickFormatter={v => new Date(v).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                  axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} allowDecimals={false}
+                  axisLine={false} tickLine={false} width={36} />
+                <Tooltip
+                  contentStyle={{ background: '#0a0600', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 12, color: '#fff' }}
+                  labelFormatter={v => new Date(v).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  formatter={(v: any, name: string) => [v, name === 'total' ? 'Total Members' : 'New Today']}
+                />
+                <ReferenceLine y={peak} stroke="rgba(16,185,129,0.2)" strokeDasharray="4 4" />
+                <Line type="monotone" dataKey="total" name="total"
+                  stroke="url(#lineGlow)" strokeWidth={3}
+                  dot={false} activeDot={{ r: 5, fill: '#34d399', stroke: '#0a0600', strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="daily" name="daily"
+                  stroke="rgba(251,191,36,0.5)" strokeWidth={1.5} strokeDasharray="4 3"
+                  dot={false} activeDot={{ r: 4, fill: '#fbbf24', stroke: '#0a0600', strokeWidth: 2 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          );
+        })() : (
+          <div className="h-48 flex items-center justify-center text-gray-600">No growth data yet</div>
+        )}
+        <div className="flex items-center gap-6 mt-4">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="w-6 h-0.5 rounded-full bg-emerald-400" />
+            Cumulative total
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="w-6 h-px rounded-full" style={{ background: 'rgba(251,191,36,0.6)', borderTop: '1.5px dashed rgba(251,191,36,0.6)' }} />
+            Daily new members
+          </div>
+        </div>
+      </div>
+
       {/* Earnings distribution + TX volume */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="glass rounded-2xl p-6 gold-border-glow">
@@ -136,17 +203,36 @@ export default function ReportsPage() {
             <BarChart2 className="w-5 h-5 text-amber-400" /> Transaction Volume by Type
           </h3>
           {txBar.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={txBar} barSize={28}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: '#0a0600', border: '1px solid rgba(180,83,9,0.4)', borderRadius: 12, color: '#fff' }} />
-                <Bar dataKey="total" name="Volume ($)" radius={[6, 6, 0, 0]}>
-                  {txBar.map((t: any, i: number) => <Cell key={i} fill={t.color} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={txBar} barSize={28}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
+                  <Tooltip contentStyle={{ background: '#0a0600', border: '1px solid rgba(180,83,9,0.4)', borderRadius: 12, color: '#fff' }}
+                    formatter={(v: any) => [`$${v}`, 'Volume']} />
+                  <Bar dataKey="total" name="Volume ($)" radius={[6, 6, 0, 0]}>
+                    {txBar.map((t: any, i: number) => <Cell key={i} fill={t.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wider">Volume Line</p>
+                <ResponsiveContainer width="100%" height={100}>
+                  <LineChart data={txBar} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ background: '#0a0600', border: '1px solid rgba(180,83,9,0.4)', borderRadius: 10, color: '#fff' }}
+                      formatter={(v: any) => [`$${v}`, 'Volume']} />
+                    <Line type="monotone" dataKey="total" strokeWidth={2.5}
+                      stroke="#f59e0b" dot={(props: any) => {
+                        const { cx, cy, payload } = props;
+                        return <circle key={payload.name} cx={cx} cy={cy} r={4} fill={payload.color} stroke="#0a0600" strokeWidth={2} />;
+                      }}
+                      activeDot={{ r: 6, stroke: '#0a0600', strokeWidth: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </>
           ) : <div className="h-48 flex items-center justify-center text-gray-600">No transaction data</div>}
         </div>
       </div>
