@@ -5,11 +5,11 @@ import { TrendingUp, Award, Users, Star, Zap, Package, Loader2 } from 'lucide-re
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 const EARNING_TYPES: Record<string, { label: string; icon: any; color: string; desc: string }> = {
-  direct_bonus: { label: 'Direct Bonus', icon: Zap, color: '#f59e0b', desc: '30% on direct referrals' },
   upgrade_bonus: { label: 'Upgrade Bonus', icon: TrendingUp, color: '#10b981', desc: '30% when referrals upgrade' },
-  leadership_pool: { label: 'Leadership Pool', icon: Award, color: '#a78bfa', desc: '10% distributed to leaders' },
-  network_level: { label: 'Network Level', icon: Users, color: '#3b82f6', desc: '10% across 4 levels' },
-  products: { label: 'Products Bonus', icon: Package, color: '#f43f5e', desc: '20% product distribution' },
+  network_level: { label: 'Network Level', icon: Users, color: '#3b82f6', desc: '15% across 10 levels' },
+  leadership_pool: { label: 'Leadership Pool', icon: Award, color: '#a78bfa', desc: '15% distributed to leaders' },
+  rank_pool: { label: 'Rank Pool', icon: Star, color: '#f59e0b', desc: '10% distributed by rank' },
+  product_reorder: { label: 'Product Reorder Bonus', icon: Package, color: '#f43f5e', desc: '45% on BoldGlow™ reorders' },
 };
 
 export default function EarningsPage() {

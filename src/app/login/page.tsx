@@ -37,17 +37,17 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: '#030300' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: '#000000' }}>
       <div className="absolute inset-0 grid-bg opacity-60 pointer-events-none" />
       <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(120,53,15,0.2) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255,100,0,0.1) 0%, transparent 70%)' }} />
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <Image src="/logo.jpeg" alt="Bold Gains" width={80} height={80}
-              className="rounded-full ring-4 ring-amber-500/30 mx-auto mb-4"
-              style={{ boxShadow: '0 0 40px rgba(202,138,4,0.25)' }} />
+              className="rounded-full mx-auto mb-4"
+              style={{ boxShadow: '0 0 40px rgba(255,140,0,0.3)', border: '2px solid rgba(255,140,0,0.25)' }} />
           </Link>
           <h1 className="text-3xl font-black gold-gradient">Welcome Back</h1>
           <p className="text-gray-400 mt-2">Sign in to your Bold Gains account</p>

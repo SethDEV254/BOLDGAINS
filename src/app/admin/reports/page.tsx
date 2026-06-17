@@ -10,10 +10,10 @@ import {
 import { PACKAGES } from '@/lib/packages';
 
 const EARNING_LABELS: Record<string, string> = {
-  direct_bonus: 'Direct Bonus', upgrade_bonus: 'Upgrade Bonus',
-  leadership_pool: 'Leadership Pool', network_level: 'Network Level', products: 'Products',
+  upgrade_bonus: 'Upgrade Bonus', network_level: 'Network Level',
+  leadership_pool: 'Leadership Pool', rank_pool: 'Rank Pool', products: 'Products',
 };
-const EARNING_COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#a78bfa', '#f43f5e'];
+const EARNING_COLORS = ['#10b981', '#3b82f6', '#a78bfa', '#f59e0b', '#f43f5e'];
 
 const TX_COLORS: Record<string, string> = {
   deposit: '#10b981', withdrawal: '#f59e0b', registration: '#3b82f6',

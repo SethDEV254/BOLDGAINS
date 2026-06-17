@@ -9,7 +9,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const { action } = await req.json();
 
-  if (action === 'approve') { approveWithdrawal(parseInt(id)); return NextResponse.json({ success: true }); }
-  if (action === 'reject') { rejectWithdrawal(parseInt(id)); return NextResponse.json({ success: true }); }
+  if (action === 'approve') { await approveWithdrawal(parseInt(id)); return NextResponse.json({ success: true }); }
+  if (action === 'reject') { await rejectWithdrawal(parseInt(id)); return NextResponse.json({ success: true }); }
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
 }

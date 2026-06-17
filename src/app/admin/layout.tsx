@@ -4,14 +4,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { LayoutDashboard, Users, Shield, LogOut, ChevronRight, ArrowDownUp, BarChart2, Home, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, LogOut, ChevronRight, ArrowDownUp, BarChart2, Home, Menu, X, Cpu, Settings } from 'lucide-react';
 
 const NAV = [
-  { href: '/admin', icon: LayoutDashboard, label: 'Overview' },
-  { href: '/admin/users', icon: Users, label: 'Members' },
-  { href: '/admin/transactions', icon: ArrowDownUp, label: 'Transactions' },
-  { href: '/admin/reports', icon: BarChart2, label: 'Reports' },
-  { href: '/', icon: Home, label: 'Home' },
+  { href: '/admin',              icon: LayoutDashboard, label: 'Overview' },
+  { href: '/admin/users',        icon: Users,           label: 'Members' },
+  { href: '/admin/transactions', icon: ArrowDownUp,     label: 'Transactions' },
+  { href: '/admin/contract',     icon: Cpu,             label: 'Contract' },
+  { href: '/admin/reports',      icon: BarChart2,       label: 'Reports' },
+  { href: '/admin/settings',     icon: Settings,        label: 'Settings' },
+  { href: '/',                   icon: Home,            label: 'Home' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -63,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#030300' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#000000' }}>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 glass border-r border-amber-900/20">
         <SidebarContent />
@@ -131,7 +133,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin" className="hover:text-amber-600 transition-colors">Overview</Link>
             <Link href="/admin/users" className="hover:text-amber-600 transition-colors">Members</Link>
             <Link href="/admin/transactions" className="hover:text-amber-600 transition-colors">Transactions</Link>
+            <Link href="/admin/contract" className="hover:text-amber-600 transition-colors">Contract</Link>
             <Link href="/admin/reports" className="hover:text-amber-600 transition-colors">Reports</Link>
+            <Link href="/admin/settings" className="hover:text-amber-600 transition-colors">Settings</Link>
           </div>
           <p className="text-xs" style={{ color: '#2e1e08' }}>© {new Date().getFullYear()} Bold Gains. Admin Panel.</p>
         </footer>

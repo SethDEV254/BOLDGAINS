@@ -80,7 +80,7 @@ export default function NetworkPage() {
         {[
           { label: 'Direct Referrals', value: data.stats.directCount, icon: Users, color: '#f59e0b' },
           { label: 'Total Network', value: data.stats.totalNetwork, icon: TrendingUp, color: '#10b981' },
-          { label: 'Network Depth', value: '4 levels', icon: ChevronDown, color: '#3b82f6' },
+          { label: 'Network Depth', value: '10 levels', icon: ChevronDown, color: '#3b82f6' },
         ].map((s, i) => (
           <div key={i} className="stat-card rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-3">
@@ -108,7 +108,7 @@ export default function NetworkPage() {
           </button>
         </div>
         <p className="text-gray-500 text-xs mt-3">
-          Share this code to earn 30% direct bonus on every registration
+          Share this code to earn network level bonuses across 10 levels
         </p>
       </div>
 

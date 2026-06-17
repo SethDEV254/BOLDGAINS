@@ -14,9 +14,13 @@ export default function DashboardPage() {
     fetch('/api/dashboard').then(r => r.json()).then(setData).finally(() => setLoading(false));
   }, []);
 
+  const refLink = data?.user?.bscAddress
+    ? `${typeof window !== 'undefined' ? window.location.origin : 'https://bold-gains.vercel.app'}/register?ref=${data.user.bscAddress}`
+    : null;
+
   function copyRef() {
-    if (data?.user?.referralCode) {
-      navigator.clipboard.writeText(data.user.referralCode);
+    if (refLink) {
+      navigator.clipboard.writeText(refLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -65,16 +69,22 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 glass px-4 py-2.5 rounded-xl border border-amber-900/30 cursor-pointer"
-          onClick={copyRef}>
-          <div>
-            <p className="text-xs text-gray-500">Your Referral Code</p>
-            <p className="font-mono font-black text-amber-400 tracking-widest text-sm">{user.referralCode}</p>
+        {refLink ? (
+          <div className="glass px-4 py-2.5 rounded-xl border border-amber-900/30">
+            <p className="text-xs text-gray-500 mb-1">Your Referral Link</p>
+            <div className="flex items-center gap-2">
+              <p className="text-amber-400 text-xs font-mono truncate max-w-48">{refLink}</p>
+              <button onClick={copyRef} className="flex-shrink-0 text-gray-400 hover:text-amber-400 transition-colors ml-1">
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-          <button className="ml-2 text-gray-400 hover:text-amber-400 transition-colors">
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-          </button>
-        </div>
+        ) : (
+          <div className="glass px-4 py-2.5 rounded-xl border border-amber-900/30">
+            <p className="text-xs text-gray-500 mb-1">Referral Link</p>
+            <p className="text-xs text-amber-600">Connect your wallet to generate your referral link</p>
+          </div>
+        )}
       </div>
 
       {/* Stats */}
@@ -106,11 +116,11 @@ export default function DashboardPage() {
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'Direct Bonus (30%)', value: earnings.directBonus, color: '#f59e0b' },
               { label: 'Upgrade Bonus (30%)', value: earnings.upgradeBonus, color: '#10b981' },
-              { label: 'Network Level (10%)', value: earnings.networkLevel, color: '#3b82f6' },
-              { label: 'Leadership Pool (10%)', value: earnings.leadershipPool, color: '#a78bfa' },
-              { label: 'Products (20%)', value: earnings.products, color: '#f43f5e' },
+              { label: 'Network Level (15%)', value: earnings.networkLevel, color: '#3b82f6' },
+              { label: 'Leadership Pool (15%)', value: earnings.leadershipPool, color: '#a78bfa' },
+              { label: 'Rank Pool (10%)', value: earnings.rankPool, color: '#f59e0b' },
+              { label: 'Products (30%)', value: earnings.products, color: '#f43f5e' },
             ].map((e, i) => {
               const pct = earnings.total > 0 ? (e.value / earnings.total) * 100 : 0;
               return (
@@ -195,7 +205,9 @@ export default function DashboardPage() {
           {directDownlines.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 text-sm">No referrals yet</p>
-              <p className="text-gray-600 text-xs mt-1">Share your code: <span className="text-amber-500 font-mono">{user.referralCode}</span></p>
+              <p className="text-gray-600 text-xs mt-1 cursor-pointer hover:text-amber-500 transition-colors" onClick={copyRef}>
+                Click to copy your referral link
+              </p>
             </div>
           ) : (
             <div className="space-y-3">

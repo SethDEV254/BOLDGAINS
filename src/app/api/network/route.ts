@@ -3,25 +3,27 @@ import { getSession } from '@/lib/auth';
 import { getDirectDownlines, getUserById, getNetworkStats } from '@/lib/db';
 import { getPackageByLevel } from '@/lib/packages';
 
-function buildTree(userId: number, depth = 0): any {
-  if (depth > 3) return null;
-  const children = getDirectDownlines(userId);
-  return children.map(child => ({
+async function buildTree(userId: number, depth = 0): Promise<any[]> {
+  if (depth > 3) return [];
+  const children = await getDirectDownlines(userId);
+  return Promise.all(children.map(async child => ({
     ...child,
     package: getPackageByLevel(child.package_level),
-    children: buildTree(child.id, depth + 1),
-  }));
+    children: await buildTree(child.id, depth + 1),
+  })));
 }
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = getUserById(session.userId);
+  const [user, stats] = await Promise.all([
+    getUserById(session.userId),
+    getNetworkStats(session.userId),
+  ]);
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const stats = getNetworkStats(session.userId);
-  const tree = buildTree(session.userId);
+  const tree = await buildTree(session.userId);
 
   return NextResponse.json({ stats, tree, referralCode: user.referral_code });
 }

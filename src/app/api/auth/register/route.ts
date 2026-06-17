@@ -1,64 +1,113 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { getUserByEmail, getUserByReferralCode, createUser, addEarning, updateWalletBalance, createTransaction } from '@/lib/db';
+import {
+  getUserByEmail, getUserByBscAddress, createUser,
+  createTransaction, getTransactionByReference, getUserById,
+} from '@/lib/db';
 import { createSession, generateReferralCode } from '@/lib/auth';
-import { PACKAGES, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { REGISTRATION_FEE, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { distributePayouts, PayoutItem } from '@/lib/payout';
 import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, referralCode, packageLevel } = await req.json();
+    const { name, email, password, refWallet, bscAddress, txHash } = await req.json();
 
-    if (!name || !email || !password || !packageLevel)
+    if (!name || !email || !password)
       return NextResponse.json({ error: 'All fields required' }, { status: 400 });
 
-    if (getUserByEmail(email))
+    if (await getUserByEmail(email))
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
 
-    const pkg = PACKAGES.find(p => p.level === packageLevel);
-    if (!pkg) return NextResponse.json({ error: 'Invalid package' }, { status: 400 });
-
     let sponsor: any = null;
-    if (referralCode) {
-      sponsor = getUserByReferralCode(referralCode);
-      if (!sponsor) return NextResponse.json({ error: 'Invalid referral code' }, { status: 400 });
+    if (refWallet && /^0x[0-9a-fA-F]{40}$/.test(refWallet)) {
+      sponsor = await getUserByBscAddress(refWallet);
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    let verifiedGross = REGISTRATION_FEE;
+    let verifiedFee   = REGISTRATION_FEE * BONUS_RATES.management_fee_deposit;
+    let verifiedNet   = verifiedGross - verifiedFee;
+
+    if (txHash) {
+      if (!/^0x[0-9a-fA-F]{64}$/.test(txHash))
+        return NextResponse.json({ error: 'Invalid tx hash' }, { status: 400 });
+      if (await getTransactionByReference(txHash))
+        return NextResponse.json({ error: 'Transaction already used' }, { status: 409 });
+
+      try {
+        const { JsonRpcProvider, Interface, formatUnits } = await import('ethers');
+        const { BSC_RPC, CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
+
+        const provider = new JsonRpcProvider(BSC_RPC);
+        const receipt  = await provider.getTransactionReceipt(txHash);
+
+        if (!receipt || receipt.status === 0)
+          return NextResponse.json({ error: 'Transaction not found or reverted' }, { status: 400 });
+        if (receipt.to?.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase())
+          return NextResponse.json({ error: 'Wrong contract address' }, { status: 400 });
+
+        const iface = new Interface(CONTRACT_ABI);
+        let log: any = null;
+        for (const l of receipt.logs) {
+          try {
+            const p = iface.parseLog({ topics: [...l.topics], data: l.data });
+            if (p?.name === 'RegistrationFeePaid') { log = p; break; }
+          } catch {}
+        }
+
+        if (!log) return NextResponse.json({ error: 'RegistrationFeePaid event not found' }, { status: 400 });
+
+        verifiedGross = parseFloat(formatUnits(log.args.gross, 18));
+        verifiedFee   = parseFloat(formatUnits(log.args.fee,   18));
+        verifiedNet   = parseFloat(formatUnits(log.args.net,   18));
+      } catch (err) {
+        console.error('[register verify]', err);
+        return NextResponse.json({ error: 'Failed to verify transaction on BSC' }, { status: 500 });
+      }
+    }
+
+    const passwordHash    = await bcrypt.hash(password, 10);
     const newReferralCode = generateReferralCode(name);
 
-    const userId = createUser({
+    const userId = await createUser({
       name, email, passwordHash,
       referralCode: newReferralCode,
       sponsorId: sponsor?.id,
-      packageLevel,
+      packageLevel: 0,
+      bscAddress: bscAddress || undefined,
     });
 
-    const fee = pkg.price * BONUS_RATES.management_fee_deposit;
-    createTransaction({
-      userId, type: 'registration', amount: pkg.price, fee, netAmount: pkg.price - fee,
-      description: `${pkg.name} package registration`,
+    await createTransaction({
+      userId, type: 'registration',
+      amount: verifiedGross, fee: verifiedFee, netAmount: verifiedNet,
+      description: 'Registration fee',
+      reference: txHash || undefined,
     });
 
     if (sponsor) {
-      const directBonus = pkg.price * BONUS_RATES.direct_bonus;
-      addEarning(sponsor.id, 'direct_bonus', directBonus, userId,
-        `Direct bonus from ${name} - ${pkg.name} package`);
-
+      const payouts: PayoutItem[] = [];
       let currentSponsor = sponsor;
-      let level = 2;
-      while (currentSponsor.sponsor_id && level <= NETWORK_LEVEL_DISTRIBUTION.length + 1) {
-        const { getUserById } = await import('@/lib/db');
-        const upline = getUserById(currentSponsor.sponsor_id);
-        if (!upline) break;
-        const rate = NETWORK_LEVEL_DISTRIBUTION[level - 2] || 0;
+      let level = 1;
+
+      while (currentSponsor && level <= NETWORK_LEVEL_DISTRIBUTION.length) {
+        const rate = NETWORK_LEVEL_DISTRIBUTION[level - 1] || 0;
         if (rate > 0) {
-          addEarning(upline.id, 'network_level', pkg.price * rate, userId,
-            `Level ${level} network bonus from ${name}`);
+          payouts.push({
+            userId: currentSponsor.id,
+            amount: verifiedGross * rate,
+            type: 'network_level',
+            description: `Level ${level} network bonus — ${name} registered`,
+            sourceUserId: userId,
+          });
         }
+        if (!currentSponsor.sponsor_id) break;
+        const upline = await getUserById(currentSponsor.sponsor_id);
+        if (!upline) break;
         currentSponsor = upline;
         level++;
       }
+
+      await distributePayouts(payouts);
     }
 
     const token = await createSession({ userId, email, role: 'member', name });
@@ -70,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error('[register]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

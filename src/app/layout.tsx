@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import PrismStars from '@/components/prism-stars';
+import { Web3Provider } from '@/components/web3-provider';
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-sans',
@@ -26,11 +27,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen antialiased" style={{ background: '#030300', color: '#f5f0e8' }}>
-        <PrismStars />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          {children}
-        </div>
+      <body className="min-h-screen antialiased" style={{ background: '#000000', color: '#f0f0f0' }}>
+        <Web3Provider>
+          <PrismStars />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {children}
+          </div>
+        </Web3Provider>
       </body>
     </html>
   );

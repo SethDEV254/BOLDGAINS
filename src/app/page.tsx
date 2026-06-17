@@ -5,20 +5,19 @@ import Link from 'next/link';
 import { PACKAGES } from '@/lib/packages';
 import { useState, useEffect, useRef } from 'react';
 import {
-  ChevronRight, Shield, TrendingUp, Users, Zap, Star, Award,
+  ChevronRight, TrendingUp, Users, Zap, Star, Award,
   Globe, ArrowRight, Flame, Crown, Diamond, LogOut, UserPlus, Menu, X,
 } from 'lucide-react';
 
 const BONUS_FEATURES = [
-  { icon: Shield, label: 'Management Fee', value: '10%', desc: 'Applied on all deposits & withdrawal pool', color: '#d97706' },
-  { icon: Zap, label: 'Direct Bonus', value: '30%', desc: 'Instant reward on every direct referral', color: '#fbbf24' },
-  { icon: TrendingUp, label: 'Upgrade Bonus', value: '30%', desc: 'Paid when your referrals upgrade tiers', color: '#f59e0b' },
-  { icon: Award, label: 'Leadership Pool', value: '10%', desc: 'Exclusive pool shared by top leaders', color: '#b45309' },
-  { icon: Users, label: 'Network Level', value: '10%', desc: 'Earn across 4 levels of your network', color: '#d97706' },
-  { icon: Star, label: 'Products Bonus', value: '20%', desc: 'Allocated to product distribution rewards', color: '#fbbf24' },
+  { icon: TrendingUp, label: 'Upgrade Bonus', value: '30%', desc: 'Paid when your referrals upgrade tiers', color: '#FF8C00' },
+  { icon: Users, label: 'Network Level', value: '15%', desc: 'Earn across 10 levels of your network', color: '#3b82f6' },
+  { icon: Award, label: 'Leadership Pool', value: '15%', desc: 'Exclusive pool shared by top leaders', color: '#a78bfa' },
+  { icon: Star, label: 'Rank Pool', value: '10%', desc: 'Distributed by rank to top earners', color: '#FFB800' },
+  { icon: Zap, label: 'Product Reorder Bonus', value: '45%', desc: 'Earn when your network reorders BoldGlow™ products', color: '#f43f5e' },
 ];
 
-const TIER_ICONS: Record<number, any> = { 9: Diamond, 10: Crown, 11: Flame };
+const TIER_ICONS: Record<number, any> = { 10: Diamond, 11: Flame, 12: Crown };
 
 export default function LandingPage() {
   const [hoveredPkg, setHoveredPkg] = useState<number | null>(null);
@@ -45,14 +44,14 @@ export default function LandingPage() {
   const parallax = scrollY * 0.4;
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: '#030300' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: '#000000' }}>
 
       {/* ── Nav ── */}
       <nav className="fixed top-0 left-0 right-0 z-50"
         style={{
-          background: scrollY > 40 || menuOpen ? 'rgba(3,3,0,0.95)' : 'transparent',
-          backdropFilter: scrollY > 40 || menuOpen ? 'blur(24px)' : 'none',
-          borderBottom: scrollY > 40 || menuOpen ? '1px solid rgba(180,83,9,0.2)' : 'none',
+          background: scrollY > 40 || menuOpen ? 'rgba(0,0,0,0.94)' : 'transparent',
+          backdropFilter: scrollY > 40 || menuOpen ? 'blur(28px)' : 'none',
+          borderBottom: scrollY > 40 || menuOpen ? '1px solid rgba(255,140,0,0.15)' : 'none',
           transition: 'all 0.4s ease',
         }}>
         <div className="flex items-center justify-between px-5 lg:px-12 py-4">
@@ -60,13 +59,13 @@ export default function LandingPage() {
             <div className="relative">
               <Image src="/logo.jpeg" alt="Bold Gains" width={40} height={40}
                 className="rounded-full relative z-10"
-                style={{ boxShadow: '0 0 20px rgba(180,83,9,0.6), 0 0 40px rgba(120,53,15,0.3)' }} />
+                style={{ boxShadow: '0 0 20px rgba(255,140,0,0.55), 0 0 40px rgba(255,100,0,0.2)' }} />
               <div className="absolute inset-0 rounded-full animate-ping"
-                style={{ background: 'rgba(180,83,9,0.3)', animationDuration: '3s' }} />
+                style={{ background: 'rgba(255,140,0,0.25)', animationDuration: '3s' }} />
             </div>
             <div>
               <span className="font-black text-base sm:text-lg tracking-widest gold-gradient">BOLD GAINS</span>
-              <span className="text-amber-900/60 text-xs font-medium block -mt-1">™</span>
+              <span className="text-xs font-medium block -mt-1" style={{ color: 'rgba(255,140,0,0.4)' }}>™</span>
             </div>
           </Link>
 
@@ -83,9 +82,9 @@ export default function LandingPage() {
             )}
             <Link href="/login"
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide transition-all"
-              style={{ background: 'rgba(120,53,15,0.18)', border: '1px solid rgba(180,83,9,0.45)', color: '#fcd34d' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(120,53,15,0.35)'; (e.currentTarget as HTMLElement).style.borderColor = '#d97706'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(120,53,15,0.18)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(180,83,9,0.45)'; }}>
+              style={{ background: 'rgba(255,140,0,0.08)', border: '1px solid rgba(255,140,0,0.3)', color: '#FFB800' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,140,0,0.16)'; (e.currentTarget as HTMLElement).style.borderColor = '#FF8C00'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,140,0,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,140,0,0.3)'; }}>
               <Users className="w-4 h-4" /> Member Login
             </Link>
             <Link href="/register" className="btn-gold flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold tracking-wide">
@@ -100,7 +99,7 @@ export default function LandingPage() {
             </Link>
             <button onClick={() => setMenuOpen(v => !v)}
               className="p-2 rounded-xl transition-all"
-              style={{ background: 'rgba(120,53,15,0.2)', border: '1px solid rgba(180,83,9,0.3)', color: '#fcd34d' }}>
+              style={{ background: 'rgba(255,140,0,0.1)', border: '1px solid rgba(255,140,0,0.25)', color: '#FFB800' }}>
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
@@ -109,10 +108,10 @@ export default function LandingPage() {
         {/* Mobile dropdown menu */}
         {menuOpen && (
           <div className="md:hidden px-5 pb-5 space-y-2"
-            style={{ borderTop: '1px solid rgba(180,83,9,0.15)' }}>
+            style={{ borderTop: '1px solid rgba(255,140,0,0.1)' }}>
             <Link href="/login" onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all w-full"
-              style={{ background: 'rgba(120,53,15,0.15)', border: '1px solid rgba(180,83,9,0.3)', color: '#fcd34d' }}>
+              style={{ background: 'rgba(255,140,0,0.08)', border: '1px solid rgba(255,140,0,0.22)', color: '#FFB800' }}>
               <Users className="w-4 h-4" /> Member Login
             </Link>
             {loggedIn && (
@@ -128,37 +127,42 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Deep background layers */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(170deg, #0a0500 0%, #030300 40%, #000200 100%)' }} />
+        {/* Base black */}
+        <div className="absolute inset-0" style={{ background: '#000000' }} />
+
+        {/* Subtle vignette depth */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 120% 80% at 50% -10%, rgba(255,100,0,0.07) 0%, transparent 55%)',
+        }} />
 
         {/* Grid */}
-        <div className="absolute inset-0 grid-bg opacity-70" style={{ transform: `translateY(${parallax * 0.3}px)` }} />
+        <div className="absolute inset-0 grid-bg opacity-60" style={{ transform: `translateY(${parallax * 0.3}px)` }} />
 
         {/* Ambient orbs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute" style={{
-            top: '15%', left: '8%', width: '500px', height: '500px',
-            background: 'radial-gradient(circle, rgba(180,83,9,0.18) 0%, rgba(120,53,15,0.08) 40%, transparent 70%)',
+            top: '10%', left: '5%', width: '560px', height: '560px',
+            background: 'radial-gradient(circle, rgba(255,120,0,0.16) 0%, rgba(255,80,0,0.06) 40%, transparent 70%)',
             transform: `translateY(${parallax * 0.5}px)`,
           }} />
           <div className="absolute" style={{
-            top: '25%', right: '5%', width: '400px', height: '400px',
-            background: 'radial-gradient(circle, rgba(120,53,15,0.14) 0%, transparent 65%)',
+            top: '20%', right: '3%', width: '440px', height: '440px',
+            background: 'radial-gradient(circle, rgba(255,184,0,0.1) 0%, transparent 65%)',
             transform: `translateY(${parallax * 0.3}px)`,
           }} />
           <div className="absolute" style={{
-            bottom: '10%', left: '30%', width: '600px', height: '300px',
-            background: 'radial-gradient(ellipse, rgba(217,119,6,0.08) 0%, transparent 70%)',
+            bottom: '8%', left: '28%', width: '640px', height: '320px',
+            background: 'radial-gradient(ellipse, rgba(255,140,0,0.07) 0%, transparent 70%)',
           }} />
           {/* Horizontal light streak */}
-          <div className="absolute top-1/2 left-0 right-0 h-px opacity-20"
-            style={{ background: 'linear-gradient(90deg, transparent, #d97706, #fbbf24, #d97706, transparent)' }} />
+          <div className="absolute top-1/2 left-0 right-0 h-px opacity-25"
+            style={{ background: 'linear-gradient(90deg, transparent, #FF8C00, #FFD700, #FF8C00, transparent)' }} />
         </div>
 
-        {/* Diagonal lines decoration */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        {/* Fine diagonal overlay */}
+        <div className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: 'repeating-linear-gradient(45deg, #b45309 0px, #b45309 1px, transparent 1px, transparent 80px)',
+            backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,100,0,0.018) 0px, rgba(255,100,0,0.018) 1px, transparent 1px, transparent 80px)',
           }} />
 
         {/* Content */}
@@ -169,38 +173,38 @@ export default function LandingPage() {
               <Image src="/logo.jpeg" alt="Bold Gains" width={130} height={130}
                 className="rounded-full relative z-10"
                 style={{
-                  boxShadow: '0 0 60px rgba(180,83,9,0.5), 0 0 120px rgba(120,53,15,0.25), 0 0 200px rgba(120,53,15,0.1)',
-                  border: '2px solid rgba(217,119,6,0.3)',
+                  boxShadow: '0 0 60px rgba(255,140,0,0.45), 0 0 120px rgba(255,100,0,0.2), 0 0 200px rgba(255,80,0,0.08)',
+                  border: '2px solid rgba(255,184,0,0.25)',
                 }} />
               <div className="absolute inset-0 rounded-full pulse-gold" />
             </div>
           </div>
 
-          {/* Label */}
+          {/* Badge */}
           <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full mb-8 text-sm font-semibold"
             style={{
-              background: 'rgba(120,53,15,0.2)',
-              border: '1px solid rgba(180,83,9,0.4)',
-              color: '#fcd34d',
-              boxShadow: '0 0 20px rgba(120,53,15,0.2)',
+              background: 'rgba(255,140,0,0.08)',
+              border: '1px solid rgba(255,140,0,0.3)',
+              color: '#FFB800',
+              boxShadow: '0 0 24px rgba(255,100,0,0.12)',
             }}>
             <Globe className="w-4 h-4" />
             Global Network Marketing Platform
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#FFB800' }} />
           </div>
 
           {/* Headline */}
           <h1 className="font-black leading-none mb-6" style={{ fontSize: 'clamp(3.5rem, 10vw, 7.5rem)' }}>
             <span className="block gold-gradient" style={{ letterSpacing: '-0.02em' }}>BUILD YOUR</span>
-            <span className="block text-white" style={{ letterSpacing: '-0.03em', textShadow: '0 0 80px rgba(180,83,9,0.3)' }}>EMPIRE</span>
+            <span className="block text-white" style={{ letterSpacing: '-0.03em', textShadow: '0 0 80px rgba(255,140,0,0.2)' }}>EMPIRE</span>
           </h1>
 
           {/* Sub */}
-          <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed" style={{ color: '#c4b08a' }}>
+          <p className="text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed" style={{ color: '#AAAAAA' }}>
             Join thousands building generational wealth through our premium{' '}
-            <span style={{ color: '#fbbf24', fontWeight: 700 }}>11-tier network</span>. Earn up to{' '}
-            <span style={{ color: '#fbbf24', fontWeight: 700 }}>30% direct bonus</span>{' '}
-            on every single referral — no cap.
+            <span style={{ color: '#FFB800', fontWeight: 700 }}>12-tier network</span>. Earn up to{' '}
+            <span style={{ color: '#FFB800', fontWeight: 700 }}>30% upgrade bonus</span>{' '}
+            across 10 levels — no cap.
           </p>
 
           {/* CTA */}
@@ -217,36 +221,21 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* Stats bar */}
-          <div className="grid grid-cols-3 gap-px rounded-2xl overflow-hidden w-full max-w-sm sm:max-w-none sm:inline-grid"
-            style={{ border: '1px solid rgba(180,83,9,0.25)', boxShadow: '0 0 40px rgba(120,53,15,0.15)' }}>
-            {[
-              { value: '10K+', label: 'Active Members' },
-              { value: '$2M+', label: 'Total Paid Out' },
-              { value: '50+', label: 'Countries' },
-            ].map((s, i) => (
-              <div key={i} className="px-4 sm:px-8 py-4 sm:py-5"
-                style={{ background: i === 1 ? 'rgba(120,53,15,0.18)' : 'rgba(15,9,2,0.7)' }}>
-                <div className="text-xl sm:text-2xl font-black gold-gradient">{s.value}</div>
-                <div className="text-xs mt-0.5 whitespace-nowrap" style={{ color: '#8a6a3a' }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, transparent, #030300)' }} />
+          style={{ background: 'linear-gradient(to bottom, transparent, #000000)' }} />
       </section>
 
       {/* ── Bonus Features ── */}
-      <section className="py-28 px-6 relative" style={{ background: '#030300' }}>
+      <section className="py-28 px-6 relative" style={{ background: '#000000' }}>
         <div className="radial-glow-top absolute inset-0 pointer-events-none" />
         <div className="max-w-7xl mx-auto relative">
           <div className="text-center mb-20">
-            <p className="text-xs font-bold tracking-[0.25em] mb-4 uppercase" style={{ color: '#b45309' }}>Revenue Streams</p>
+            <p className="text-xs font-bold tracking-[0.25em] mb-4 uppercase" style={{ color: '#FF8C00' }}>Revenue Streams</p>
             <h2 className="font-black mb-5" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
-              <span className="gold-gradient">Six Ways</span>
+              <span className="gold-gradient">Five Ways</span>
               <span className="text-white"> to Earn</span>
             </h2>
             <div className="gold-divider max-w-xs mx-auto" />
@@ -255,59 +244,184 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {BONUS_FEATURES.map((f, i) => (
               <div key={i}
-                className="group relative rounded-2xl p-6 overflow-hidden cursor-default transition-all duration-400"
+                className="group relative rounded-2xl p-6 overflow-hidden cursor-default"
                 style={{
-                  background: 'rgba(10,6,1,0.8)',
-                  border: `1px solid rgba(180,83,9,0.18)`,
-                  transition: 'all 0.35s ease',
+                  background: 'rgba(255,255,255,0.025)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  transition: 'all 0.35s cubic-bezier(0.23,1,0.32,1)',
                 }}
                 onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.border = `1px solid ${f.color}55`;
-                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 40px ${f.color}18, 0 16px 40px rgba(0,0,0,0.5)`;
-                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
+                  (e.currentTarget as HTMLElement).style.border = `1px solid ${f.color}44`;
+                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 48px ${f.color}14, 0 20px 48px rgba(0,0,0,0.6)`;
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-6px)';
                 }}
                 onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.border = '1px solid rgba(180,83,9,0.18)';
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)';
+                  (e.currentTarget as HTMLElement).style.border = '1px solid rgba(255,255,255,0.07)';
                   (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                   (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
                 }}>
-                {/* Subtle bg glow */}
+                {/* Corner glow */}
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{ background: `radial-gradient(circle, ${f.color}18, transparent)`, transform: 'translate(30%, -30%)' }} />
+                {/* Bottom-left glow */}
+                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full pointer-events-none opacity-0 group-hover:opacity-60 transition-opacity duration-700"
+                  style={{ background: `radial-gradient(circle, ${f.color}10, transparent)`, transform: 'translate(-30%, 30%)' }} />
 
-                <div className="flex items-start justify-between mb-5">
-                  <div className="p-3 rounded-xl" style={{ background: `${f.color}18`, border: `1px solid ${f.color}30` }}>
+                <div className="flex items-start justify-between mb-5 relative z-10">
+                  <div className="p-3 rounded-xl" style={{ background: `${f.color}14`, border: `1px solid ${f.color}28` }}>
                     <f.icon className="w-6 h-6" style={{ color: f.color }} />
                   </div>
                   <span className="text-4xl font-black" style={{
-                    background: `linear-gradient(135deg, ${f.color}, #78350f)`,
+                    background: `linear-gradient(135deg, ${f.color}, ${f.color}88)`,
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                   }}>{f.value}</span>
                 </div>
-                <h3 className="text-white font-black text-lg mb-2 tracking-tight">{f.label}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: '#7a5c35' }}>{f.desc}</p>
+                <h3 className="text-white font-black text-lg mb-2 tracking-tight relative z-10">{f.label}</h3>
+                <p className="text-sm leading-relaxed relative z-10" style={{ color: '#777777' }}>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ── BoldGlow Product ── */}
+      <section className="py-28 px-6 relative overflow-hidden" style={{ background: '#000000' }}>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(255,184,0,0.06) 0%, transparent 70%)' }} />
+        <div className="relative max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+            <p className="text-xs font-bold tracking-[0.25em] mb-4 uppercase" style={{ color: '#FF8C00' }}>Our Product</p>
+            <h2 className="font-black mb-5" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
+              <span className="gold-gradient">BoldGlow™</span>
+              <span className="text-white"> Gold Mask</span>
+            </h2>
+            <p className="text-base max-w-xl mx-auto" style={{ color: '#777777' }}>
+              Retinol · Snake Venom Peptides · 24K Gold — in one premium peel-off formula.
+            </p>
+            <div className="gold-divider max-w-xs mx-auto mt-5" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
+            {/* Left — product visual */}
+            <div className="relative flex items-center justify-center">
+              <div className="absolute inset-0 rounded-3xl pointer-events-none"
+                style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(255,184,0,0.08) 0%, transparent 70%)' }} />
+              <div className="relative rounded-3xl overflow-hidden flex items-center justify-center p-8"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,184,0,0.15)', maxWidth: 420 }}>
+                <div className="text-center">
+                  <div className="w-32 h-32 rounded-full mx-auto mb-6 flex items-center justify-center text-5xl font-black"
+                    style={{ background: 'linear-gradient(135deg, #FFD700, #FF8C00)', color: '#000', boxShadow: '0 0 60px rgba(255,184,0,0.4)' }}>
+                    B
+                  </div>
+                  <p className="font-black text-2xl gold-gradient tracking-wider mb-1">BOLDGLOW™</p>
+                  <p className="text-sm font-semibold" style={{ color: '#888' }}>RETINOL SNAKE VENOM</p>
+                  <p className="text-lg font-black text-white mt-1">GOLD PEEL-OFF MASK</p>
+                  <p className="text-xs mt-4 px-4" style={{ color: '#555' }}>
+                    Be Bold. Gain Power. Reveal Your Golden Glow.
+                  </p>
+                  <div className="flex items-center justify-center gap-4 mt-6">
+                    {['Retinol', 'Snake Venom', '24K Gold'].map((ing, i) => (
+                      <div key={i} className="px-3 py-1 rounded-full text-xs font-semibold"
+                        style={{ background: 'rgba(255,184,0,0.1)', border: '1px solid rgba(255,184,0,0.25)', color: '#FFB800' }}>
+                        {ing}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right — benefits */}
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#FF8C00' }}>Key Benefits</p>
+                <div className="space-y-3">
+                  {[
+                    'Reduces appearance of fine lines and wrinkles',
+                    'Firms, smooths and promotes younger-looking skin',
+                    'Deeply cleanses pores and removes impurities',
+                    'Brightens dull skin for a radiant glow',
+                    'Supports skin hydration and improved elasticity',
+                    'Refines skin texture — leaves face feeling refreshed',
+                  ].map((b, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
+                        style={{ background: 'rgba(255,184,0,0.12)', border: '1px solid rgba(255,184,0,0.3)' }}>
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#FFB800' }} />
+                      </div>
+                      <p className="text-sm" style={{ color: '#BBBBBB' }}>{b}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
+              <div>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#FF8C00' }}>Hero Ingredients</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { name: 'Retinol', desc: 'Skin renewal & anti-aging' },
+                    { name: 'Snake Venom Peptides', desc: 'Firmness & smoother skin' },
+                    { name: '24K Gold', desc: 'Radiance & luxurious glow' },
+                    { name: 'Collagen & Agents', desc: 'Hydration & suppleness' },
+                  ].map((ing, i) => (
+                    <div key={i} className="p-3 rounded-xl"
+                      style={{ background: 'rgba(255,184,0,0.04)', border: '1px solid rgba(255,184,0,0.12)' }}>
+                      <p className="text-sm font-bold text-white">{ing.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: '#666' }}>{ing.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* How to use */}
+          <div className="rounded-3xl p-8 md:p-12"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,184,0,0.12)' }}>
+            <p className="text-xs font-bold tracking-widest uppercase mb-6 text-center" style={{ color: '#FF8C00' }}>How to Use</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {[
+                { step: '01', text: 'Cleanse and dry your face thoroughly' },
+                { step: '02', text: 'Apply an even layer, avoid eyes, brows, lips & hairline' },
+                { step: '03', text: 'Leave on 15–20 min until fully dry' },
+                { step: '04', text: 'Gently peel off from the edges' },
+                { step: '05', text: 'Rinse residue, follow with moisturizer' },
+              ].map((s, i) => (
+                <div key={i} className="text-center">
+                  <div className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center text-sm font-black"
+                    style={{ background: 'linear-gradient(135deg, rgba(255,140,0,0.2), rgba(255,184,0,0.08))', border: '1px solid rgba(255,184,0,0.3)', color: '#FFB800' }}>
+                    {s.step}
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: '#888' }}>{s.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Packages ── */}
       <section className="py-28 px-6 relative overflow-hidden"
-        style={{ background: 'linear-gradient(180deg, #030300 0%, #060400 50%, #030300 100%)' }}>
-        <div className="absolute inset-0 grid-bg opacity-40 pointer-events-none" />
+        style={{ background: 'linear-gradient(180deg, #000000 0%, #050505 50%, #000000 100%)' }}>
+        <div className="absolute inset-0 grid-bg opacity-35 pointer-events-none" />
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(120,53,15,0.12) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(255,100,0,0.08) 0%, transparent 70%)' }} />
 
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <p className="text-xs font-bold tracking-[0.25em] mb-4 uppercase" style={{ color: '#b45309' }}>Membership Tiers</p>
+            <p className="text-xs font-bold tracking-[0.25em] mb-4 uppercase" style={{ color: '#FF8C00' }}>Membership Tiers</p>
             <h2 className="font-black mb-5" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)' }}>
               <span className="text-white">Choose Your</span>
               <span className="gold-gradient"> Package</span>
             </h2>
-            <p className="text-base max-w-xl mx-auto" style={{ color: '#7a5c35' }}>
-              11 tiers of power. Start anywhere, grow everywhere.
+            <p className="text-base max-w-xl mx-auto" style={{ color: '#777777' }}>
+              12 tiers of power. Start anywhere, grow everywhere.
             </p>
             <div className="gold-divider max-w-xs mx-auto mt-5" />
           </div>
@@ -323,42 +437,42 @@ export default function LandingPage() {
                   onMouseLeave={() => setHoveredPkg(null)}
                   className="relative rounded-3xl cursor-pointer overflow-hidden group"
                   style={{
-                    backdropFilter: isHovered ? 'blur(24px)' : 'blur(12px)',
-                    WebkitBackdropFilter: isHovered ? 'blur(24px)' : 'blur(12px)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
                     background: isHovered
-                      ? `linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(${pkg.color === '#f59e0b' ? '245,158,11' : '255,255,255'},0.04) 50%, rgba(0,0,0,0.6) 100%)`
-                      : 'rgba(255,255,255,0.03)',
+                      ? 'rgba(255,255,255,0.06)'
+                      : 'rgba(255,255,255,0.028)',
                     border: isHovered
-                      ? `1px solid ${pkg.color}55`
+                      ? `1px solid ${pkg.color}44`
                       : '1px solid rgba(255,255,255,0.07)',
                     boxShadow: isHovered
-                      ? `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${pkg.color}22, inset 0 1px 0 rgba(255,255,255,0.1), 0 0 60px ${pkg.color}18`
-                      : '0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+                      ? `0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px ${pkg.color}18, inset 0 1px 0 rgba(255,255,255,0.08), 0 0 80px ${pkg.color}14`
+                      : '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
                     transform: isHovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
                     transition: 'all 0.4s cubic-bezier(0.23,1,0.32,1)',
                   }}>
 
-                  {/* Glass inner top highlight */}
+                  {/* Top highlight line */}
                   <div className="absolute top-0 left-0 right-0 h-px pointer-events-none"
-                    style={{ background: isHovered ? `linear-gradient(90deg, transparent, ${pkg.color}60, transparent)` : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
+                    style={{ background: isHovered ? `linear-gradient(90deg, transparent, ${pkg.color}55, transparent)` : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
 
-                  {/* Ambient color orb on hover */}
+                  {/* Ambient orbs */}
                   <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none transition-opacity duration-500"
-                    style={{ background: `radial-gradient(circle, ${pkg.color}25, transparent 70%)`, opacity: isHovered ? 1 : 0 }} />
+                    style={{ background: `radial-gradient(circle, ${pkg.color}22, transparent 70%)`, opacity: isHovered ? 1 : 0 }} />
                   <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full pointer-events-none transition-opacity duration-500"
-                    style={{ background: `radial-gradient(circle, ${pkg.color}15, transparent 70%)`, opacity: isHovered ? 1 : 0 }} />
+                    style={{ background: `radial-gradient(circle, ${pkg.color}12, transparent 70%)`, opacity: isHovered ? 1 : 0 }} />
 
                   {/* Badge */}
                   {pkg.level === 5 && (
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 px-4 py-1 text-xs font-black rounded-b-xl tracking-widest"
-                      style={{ background: `linear-gradient(135deg, #d97706, #b45309)`, color: '#fef3c7', boxShadow: '0 4px 12px rgba(180,83,9,0.4)' }}>
+                      style={{ background: 'linear-gradient(135deg, #FF8C00, #CC5500)', color: '#FFF8E1', boxShadow: '0 4px 12px rgba(255,140,0,0.35)' }}>
                       POPULAR
                     </div>
                   )}
-                  {pkg.level === 11 && (
+                  {pkg.level === 12 && (
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 px-4 py-1 text-xs font-black rounded-b-xl flex items-center gap-1 tracking-widest"
-                      style={{ background: `linear-gradient(135deg, ${pkg.color}, #92400e)`, color: '#000', boxShadow: `0 4px 12px ${pkg.color}50` }}>
-                      <Flame className="w-3 h-3" /> ELITE
+                      style={{ background: `linear-gradient(135deg, ${pkg.color}, #994D00)`, color: '#000', boxShadow: `0 4px 12px ${pkg.color}45` }}>
+                      <Crown className="w-3 h-3" /> ELITE
                     </div>
                   )}
 
@@ -368,50 +482,50 @@ export default function LandingPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300"
                           style={{
-                            background: isHovered ? `${pkg.color}25` : `${pkg.color}12`,
-                            border: `1px solid ${pkg.color}${isHovered ? '50' : '25'}`,
+                            background: isHovered ? `${pkg.color}22` : `${pkg.color}10`,
+                            border: `1px solid ${pkg.color}${isHovered ? '44' : '20'}`,
                           }}>
                           {TierIcon
                             ? <TierIcon className="w-4 h-4" style={{ color: pkg.color }} />
                             : <span className="text-xs font-black" style={{ color: pkg.color }}>{pkg.level}</span>}
                         </div>
-                        <span className="text-xs font-bold tracking-wider uppercase" style={{ color: isHovered ? pkg.color : '#6a4a25' }}>
+                        <span className="text-xs font-bold tracking-wider uppercase" style={{ color: isHovered ? pkg.color : '#555555' }}>
                           Tier {pkg.level}
                         </span>
                       </div>
                       <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background: 'rgba(255,255,255,0.05)', color: '#5a3f1f', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        style={{ background: 'rgba(255,255,255,0.04)', color: '#555555', border: '1px solid rgba(255,255,255,0.06)' }}>
                         {pkg.products}+ items
                       </span>
                     </div>
 
                     {/* Name & Price */}
                     <h3 className="font-black text-xl tracking-tight mb-1 transition-all duration-300"
-                      style={{ color: isHovered ? pkg.color : '#e8d5b0' }}>
+                      style={{ color: isHovered ? pkg.color : '#EEEEEE' }}>
                       {pkg.name}
                     </h3>
                     <div className="flex items-end gap-1 mb-4">
                       <span className="text-4xl font-black text-white" style={{ letterSpacing: '-0.03em', lineHeight: 1 }}>
                         ${pkg.price.toLocaleString()}
                       </span>
-                      <span className="text-xs mb-1" style={{ color: '#4a3520' }}>USD</span>
+                      <span className="text-xs mb-1" style={{ color: '#555555' }}>USD</span>
                     </div>
 
                     {/* Divider */}
                     <div className="h-px mb-4 transition-all duration-300"
-                      style={{ background: isHovered ? `linear-gradient(90deg, transparent, ${pkg.color}40, transparent)` : 'rgba(255,255,255,0.05)' }} />
+                      style={{ background: isHovered ? `linear-gradient(90deg, transparent, ${pkg.color}35, transparent)` : 'rgba(255,255,255,0.05)' }} />
 
                     {/* Features */}
                     <div className="space-y-2 mb-5">
                       {[
                         `${pkg.products}+ products`,
-                        '30% direct bonus',
-                        '10% network bonus',
+                        '30% upgrade bonus',
+                        '15% network bonus',
                       ].map((f, i) => (
                         <div key={i} className="flex items-center gap-2.5">
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-300"
-                            style={{ background: isHovered ? pkg.color : '#4a3520', boxShadow: isHovered ? `0 0 6px ${pkg.color}` : 'none' }} />
-                          <span className="text-xs" style={{ color: isHovered ? '#c4a060' : '#4a3520' }}>{f}</span>
+                            style={{ background: isHovered ? pkg.color : '#444444', boxShadow: isHovered ? `0 0 6px ${pkg.color}` : 'none' }} />
+                          <span className="text-xs" style={{ color: isHovered ? '#CCCCCC' : '#555555' }}>{f}</span>
                         </div>
                       ))}
                     </div>
@@ -422,10 +536,10 @@ export default function LandingPage() {
                       style={{
                         background: isHovered
                           ? `linear-gradient(135deg, ${pkg.color}, ${pkg.color}bb)`
-                          : `${pkg.color}18`,
+                          : `${pkg.color}14`,
                         color: isHovered ? '#000' : pkg.color,
-                        border: `1px solid ${pkg.color}${isHovered ? 'cc' : '35'}`,
-                        boxShadow: isHovered ? `0 6px 24px ${pkg.color}45` : 'none',
+                        border: `1px solid ${pkg.color}${isHovered ? 'bb' : '28'}`,
+                        boxShadow: isHovered ? `0 6px 24px ${pkg.color}40` : 'none',
                         letterSpacing: '0.05em',
                       }}>
                       <UserPlus className="w-4 h-4" />
@@ -441,14 +555,14 @@ export default function LandingPage() {
 
       {/* ── CTA ── */}
       <section className="py-28 px-6 relative overflow-hidden text-center"
-        style={{ background: '#030300' }}>
+        style={{ background: '#000000' }}>
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(120,53,15,0.2) 0%, transparent 70%)' }} />
-        <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
+          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255,100,0,0.12) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 grid-bg opacity-25 pointer-events-none" />
 
         <div className="relative max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-xs font-bold tracking-widest uppercase"
-            style={{ background: 'rgba(120,53,15,0.2)', border: '1px solid rgba(180,83,9,0.35)', color: '#d97706' }}>
+            style={{ background: 'rgba(255,140,0,0.08)', border: '1px solid rgba(255,140,0,0.28)', color: '#FF8C00' }}>
             <Flame className="w-3.5 h-3.5" /> Don&apos;t Wait. Build Now.
           </div>
 
@@ -458,7 +572,7 @@ export default function LandingPage() {
             <span className="text-white">Without Limits?</span>
           </h2>
 
-          <p className="text-base mb-12 max-w-lg mx-auto" style={{ color: '#7a5c35' }}>
+          <p className="text-base mb-12 max-w-lg mx-auto" style={{ color: '#777777' }}>
             Join Bold Gains. Refer people. Watch your network grow. Collect real money.
           </p>
 
@@ -469,25 +583,24 @@ export default function LandingPage() {
             <ChevronRight className="w-6 h-6" />
           </Link>
 
-          <p className="mt-5 text-xs" style={{ color: '#4a3520' }}>No hidden fees · Instant setup · Earn from day one</p>
+          <p className="mt-5 text-xs" style={{ color: '#444444' }}>No hidden fees · Instant setup · Earn from day one</p>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="relative" style={{ borderTop: '1px solid rgba(120,53,15,0.25)', background: '#020200' }}>
+      <footer className="relative" style={{ borderTop: '1px solid rgba(255,140,0,0.12)', background: '#000000' }}>
         <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Image src="/logo.jpeg" alt="Bold Gains" width={32} height={32}
-              className="rounded-full opacity-70"
-              style={{ filter: 'sepia(30%) saturate(200%)' }} />
+              className="rounded-full opacity-60" />
             <span className="font-black tracking-widest gold-gradient text-sm">BOLD GAINS™</span>
           </div>
-          <p className="text-xs" style={{ color: '#3a2a10' }}>
+          <p className="text-xs" style={{ color: '#333333' }}>
             © {new Date().getFullYear()} Bold Gains. All rights reserved. Build your empire.
           </p>
-          <div className="flex items-center gap-5 text-xs" style={{ color: '#4a3520' }}>
-            <Link href="/login" className="hover:text-amber-600 transition-colors">Login</Link>
-            <Link href="/register" className="hover:text-amber-600 transition-colors">Register</Link>
+          <div className="flex items-center gap-5 text-xs" style={{ color: '#444444' }}>
+            <Link href="/login" className="transition-colors hover:text-orange-500">Login</Link>
+            <Link href="/register" className="transition-colors hover:text-orange-500">Register</Link>
           </div>
         </div>
       </footer>

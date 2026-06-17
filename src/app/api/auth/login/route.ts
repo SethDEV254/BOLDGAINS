@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const { email, password } = await req.json();
     if (!email || !password) return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
 
-    const user = getUserByEmail(email);
+    const user = await getUserByEmail(email);
     if (!user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
     const valid = await bcrypt.compare(password, user.password_hash);
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, role: user.role });
   } catch (err) {
+    console.error('[login]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

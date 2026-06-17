@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Loader2, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
-
+import { ArrowDownLeft, ArrowUpRight, Loader2, Search, CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
 const TX_COLORS: Record<string, string> = {
   deposit: '#10b981', withdrawal: '#f59e0b', registration: '#3b82f6',
   upgrade: '#a78bfa', admin_adjustment: '#f43f5e', earning: '#fbbf24',
@@ -22,8 +21,7 @@ export default function TransactionsPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [working, setWorking] = useState<number | null>(null);
   const [toast, setToast] = useState('');
-
-  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 4000); }
 
   async function load() {
     const d = await fetch('/api/admin/transactions').then(r => r.json());
@@ -36,11 +34,22 @@ export default function TransactionsPage() {
 
   async function handleWithdrawal(id: number, action: 'approve' | 'reject') {
     setWorking(id);
-    await fetch(`/api/admin/withdrawals/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
-    });
-    showToast(`Withdrawal ${action}d`);
+    try {
+      if (action === 'approve') {
+        await fetch(`/api/admin/withdrawals/${id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'approve' }),
+        });
+      } else {
+        await fetch(`/api/admin/withdrawals/${id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reject' }),
+        });
+        showToast('Withdrawal rejected — balance refunded');
+      }
+    } catch (e: any) {
+      showToast(`Error: ${e?.message || 'Failed'}`);
+    }
     await load();
     setWorking(null);
   }
@@ -90,36 +99,46 @@ export default function TransactionsPage() {
       {/* Pending withdrawals alert */}
       {pendingWithdrawals.length > 0 && (
         <div className="glass rounded-2xl p-5 gold-border-glow">
-          <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-400" />
-            Pending Withdrawals ({pendingWithdrawals.length})
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-bold flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-400" />
+              Pending Withdrawals ({pendingWithdrawals.length})
+            </h3>
+            <span className="text-xs text-gray-500">Use Contract page to process</span>
+          </div>
           <div className="space-y-2">
-            {pendingWithdrawals.map(t => (
-              <div key={t.id} className="flex items-center gap-4 p-3 rounded-xl"
-                style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                <div className="flex-1">
-                  <p className="text-white text-sm font-medium">{t.user_name}</p>
-                  <p className="text-gray-500 text-xs">{t.user_email} · {new Date(t.created_at).toLocaleString()}</p>
+            {pendingWithdrawals.map(t => {
+              const hasWalletAddr = t.reference && /^0x[0-9a-fA-F]{40}$/.test(t.reference);
+              return (
+                <div key={t.id} className="flex items-center gap-4 p-3 rounded-xl"
+                  style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium">{t.user_name}</p>
+                    <p className="text-gray-500 text-xs">{t.user_email} · {new Date(t.created_at).toLocaleString()}</p>
+                    {hasWalletAddr && (
+                      <p className="text-xs font-mono text-amber-500/70 mt-0.5">→ {t.reference.slice(0, 10)}…{t.reference.slice(-6)}</p>
+                    )}
+                  </div>
+                  <div className="text-right mr-4 flex-shrink-0">
+                    <p className="text-amber-400 font-bold">${t.amount.toFixed(2)}</p>
+                    <p className="text-gray-600 text-xs">Net {t.net_amount.toFixed(4)} BNB</p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => handleWithdrawal(t.id, 'approve')} disabled={working === t.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
+                      style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
+                      {working === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                      Approve
+                    </button>
+                    <button onClick={() => handleWithdrawal(t.id, 'reject')} disabled={working === t.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                      style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
+                      <XCircle className="w-3.5 h-3.5" /> Reject
+                    </button>
+                  </div>
                 </div>
-                <div className="text-right mr-4">
-                  <p className="text-amber-400 font-bold">${t.amount.toFixed(2)}</p>
-                  <p className="text-gray-600 text-xs">Net ${t.net_amount.toFixed(2)}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleWithdrawal(t.id, 'approve')} disabled={working === t.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                    style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
-                    {working === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} Approve
-                  </button>
-                  <button onClick={() => handleWithdrawal(t.id, 'reject')} disabled={working === t.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                    style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
-                    <XCircle className="w-3.5 h-3.5" /> Reject
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

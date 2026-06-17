@@ -1,255 +1,322 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
+import { neon } from '@neondatabase/serverless';
+import bcrypt from 'bcryptjs';
 
-const DB_DIR = process.env.NODE_ENV === 'production'
-  ? '/tmp'
-  : path.join(process.cwd(), 'data');
-const DB_PATH = path.join(DB_DIR, 'boldgains.db');
-
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
-
-let db: Database.Database;
-
-function getDb(): Database.Database {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initDb(db);
-  }
-  return db;
+function _sql() {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL env var not set');
+  return neon(url);
 }
 
-function initDb(db: Database.Database) {
-  db.exec(`
+let initialized = false;
+
+async function ensureInit() {
+  if (initialized) return;
+  initialized = true;
+  const sql = _sql();
+
+  await sql`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       referral_code TEXT UNIQUE NOT NULL,
       sponsor_id INTEGER,
       package_level INTEGER DEFAULT 0,
-      wallet_balance REAL DEFAULT 0,
-      total_earned REAL DEFAULT 0,
+      wallet_balance DOUBLE PRECISION DEFAULT 0,
+      total_earned DOUBLE PRECISION DEFAULT 0,
+      bsc_address TEXT,
       role TEXT DEFAULT 'member',
       status TEXT DEFAULT 'active',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (sponsor_id) REFERENCES users(id)
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
       type TEXT NOT NULL,
-      amount REAL NOT NULL,
-      fee REAL DEFAULT 0,
-      net_amount REAL NOT NULL,
+      amount DOUBLE PRECISION NOT NULL,
+      fee DOUBLE PRECISION DEFAULT 0,
+      net_amount DOUBLE PRECISION NOT NULL,
       description TEXT,
       reference TEXT,
       status TEXT DEFAULT 'completed',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
 
+  await sql`
     CREATE TABLE IF NOT EXISTS earnings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL,
       type TEXT NOT NULL,
-      amount REAL NOT NULL,
+      amount DOUBLE PRECISION NOT NULL,
       source_user_id INTEGER,
       description TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
 
-    CREATE INDEX IF NOT EXISTS idx_users_referral ON users(referral_code);
-    CREATE INDEX IF NOT EXISTS idx_users_sponsor ON users(sponsor_id);
-    CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings(user_id);
-  `);
+  await sql`CREATE INDEX IF NOT EXISTS idx_users_referral ON users(referral_code)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_users_sponsor ON users(sponsor_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings(user_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_transactions_ref ON transactions(reference)`;
 
-  const admin = db.prepare('SELECT id FROM users WHERE role = ?').get('admin');
-  if (!admin) {
-    const bcrypt = require('bcryptjs');
-    const hash = bcrypt.hashSync('Wealth@2026', 10);
-    db.prepare(`
+  const admins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
+  if (admins.length === 0) {
+    const hash = await bcrypt.hash('Wealth@2026', 10);
+    await sql`
       INSERT INTO users (name, email, password_hash, referral_code, role, package_level, wallet_balance)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run('Admin', 'admin@boldgains.com', hash, 'ADMIN001', 'admin', 11, 0);
+      VALUES ('Admin', 'admin@boldgains.com', ${hash}, 'ADMIN001', 'admin', 12, 0)
+      ON CONFLICT DO NOTHING
+    `;
   }
 }
 
-export function getUserByEmail(email: string) {
-  return getDb().prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+async function getDb() {
+  await ensureInit();
+  return _sql();
 }
 
-export function getUserById(id: number) {
-  return getDb().prepare('SELECT * FROM users WHERE id = ?').get(id) as any;
+export async function getUserByEmail(email: string) {
+  const sql = await getDb();
+  const rows = await sql`SELECT * FROM users WHERE email = ${email}`;
+  return rows[0] || null;
 }
 
-export function getUserByReferralCode(code: string) {
-  return getDb().prepare('SELECT * FROM users WHERE referral_code = ?').get(code) as any;
+export async function getUserById(id: number) {
+  const sql = await getDb();
+  const rows = await sql`SELECT * FROM users WHERE id = ${id}`;
+  return rows[0] || null;
 }
 
-export function createUser(data: {
+export async function getUserByReferralCode(code: string) {
+  const sql = await getDb();
+  const rows = await sql`SELECT * FROM users WHERE referral_code = ${code}`;
+  return rows[0] || null;
+}
+
+export async function getUserByBscAddress(address: string) {
+  const sql = await getDb();
+  const rows = await sql`SELECT * FROM users WHERE LOWER(bsc_address) = LOWER(${address})`;
+  return rows[0] || null;
+}
+
+export async function createUser(data: {
   name: string; email: string; passwordHash: string;
-  referralCode: string; sponsorId?: number; packageLevel: number;
+  referralCode: string; sponsorId?: number; packageLevel: number; bscAddress?: string;
 }) {
-  const result = getDb().prepare(`
-    INSERT INTO users (name, email, password_hash, referral_code, sponsor_id, package_level)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(data.name, data.email, data.passwordHash, data.referralCode, data.sponsorId ?? null, data.packageLevel);
-  return result.lastInsertRowid as number;
+  const sql = await getDb();
+  const rows = await sql`
+    INSERT INTO users (name, email, password_hash, referral_code, sponsor_id, package_level, bsc_address)
+    VALUES (${data.name}, ${data.email}, ${data.passwordHash}, ${data.referralCode},
+            ${data.sponsorId ?? null}, ${data.packageLevel}, ${data.bscAddress ?? null})
+    RETURNING id
+  `;
+  return rows[0].id as number;
 }
 
-export function updateUserPackage(userId: number, packageLevel: number) {
-  getDb().prepare('UPDATE users SET package_level = ? WHERE id = ?').run(packageLevel, userId);
+export async function updateUserBscAddress(userId: number, bscAddress: string) {
+  const sql = await getDb();
+  await sql`UPDATE users SET bsc_address = ${bscAddress} WHERE id = ${userId}`;
 }
 
-export function updateWalletBalance(userId: number, amount: number) {
-  getDb().prepare('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?').run(amount, userId);
+export async function updateUserPackage(userId: number, packageLevel: number) {
+  const sql = await getDb();
+  await sql`UPDATE users SET package_level = ${packageLevel} WHERE id = ${userId}`;
 }
 
-export function addEarning(userId: number, type: string, amount: number, sourceUserId?: number, description?: string) {
-  getDb().prepare(`
+export async function updateWalletBalance(userId: number, amount: number) {
+  const sql = await getDb();
+  await sql`UPDATE users SET wallet_balance = wallet_balance + ${amount} WHERE id = ${userId}`;
+}
+
+export async function addEarning(userId: number, type: string, amount: number, sourceUserId?: number, description?: string) {
+  const sql = await getDb();
+  await sql`
     INSERT INTO earnings (user_id, type, amount, source_user_id, description)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(userId, type, amount, sourceUserId ?? null, description ?? null);
-  getDb().prepare('UPDATE users SET wallet_balance = wallet_balance + ?, total_earned = total_earned + ? WHERE id = ?')
-    .run(amount, amount, userId);
+    VALUES (${userId}, ${type}, ${amount}, ${sourceUserId ?? null}, ${description ?? null})
+  `;
+  await sql`
+    UPDATE users SET wallet_balance = wallet_balance + ${amount}, total_earned = total_earned + ${amount}
+    WHERE id = ${userId}
+  `;
 }
 
-export function createTransaction(data: {
+export async function recordEarning(userId: number, type: string, amount: number, sourceUserId?: number, description?: string) {
+  const sql = await getDb();
+  await sql`
+    INSERT INTO earnings (user_id, type, amount, source_user_id, description)
+    VALUES (${userId}, ${type}, ${amount}, ${sourceUserId ?? null}, ${description ?? null})
+  `;
+  await sql`UPDATE users SET total_earned = total_earned + ${amount} WHERE id = ${userId}`;
+}
+
+export async function createTransaction(data: {
   userId: number; type: string; amount: number; fee: number;
   netAmount: number; description?: string; reference?: string; status?: string;
 }) {
-  return getDb().prepare(`
+  const sql = await getDb();
+  const rows = await sql`
     INSERT INTO transactions (user_id, type, amount, fee, net_amount, description, reference, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(data.userId, data.type, data.amount, data.fee, data.netAmount,
-    data.description ?? null, data.reference ?? null, data.status ?? 'completed').lastInsertRowid;
+    VALUES (${data.userId}, ${data.type}, ${data.amount}, ${data.fee}, ${data.netAmount},
+            ${data.description ?? null}, ${data.reference ?? null}, ${data.status ?? 'completed'})
+    RETURNING id
+  `;
+  return rows[0].id as number;
 }
 
-export function getUserTransactions(userId: number, limit = 20) {
-  return getDb().prepare(`
-    SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT ?
-  `).all(userId, limit) as any[];
+export async function getTransactionByReference(reference: string) {
+  const sql = await getDb();
+  const rows = await sql`SELECT id FROM transactions WHERE reference = ${reference}`;
+  return rows[0] || null;
 }
 
-export function getUserEarnings(userId: number) {
-  return getDb().prepare(`
+export async function getUserTransactions(userId: number, limit = 20) {
+  const sql = await getDb();
+  return await sql`
+    SELECT * FROM transactions WHERE user_id = ${userId} ORDER BY created_at DESC LIMIT ${limit}
+  `;
+}
+
+export async function getUserEarnings(userId: number) {
+  const sql = await getDb();
+  return await sql`
     SELECT e.*, u.name as source_name FROM earnings e
     LEFT JOIN users u ON e.source_user_id = u.id
-    WHERE e.user_id = ? ORDER BY e.created_at DESC LIMIT 50
-  `).all(userId) as any[];
+    WHERE e.user_id = ${userId} ORDER BY e.created_at DESC LIMIT 50
+  `;
 }
 
-export function getUserEarningsSummary(userId: number) {
-  return getDb().prepare(`
-    SELECT type, SUM(amount) as total FROM earnings WHERE user_id = ? GROUP BY type
-  `).all(userId) as any[];
+export async function getUserEarningsSummary(userId: number) {
+  const sql = await getDb();
+  return await sql`
+    SELECT type, SUM(amount) as total FROM earnings WHERE user_id = ${userId} GROUP BY type
+  `;
 }
 
-export function getDirectDownlines(userId: number) {
-  return getDb().prepare(`
+export async function getDirectDownlines(userId: number) {
+  const sql = await getDb();
+  return await sql`
     SELECT id, name, email, referral_code, package_level, total_earned, created_at
-    FROM users WHERE sponsor_id = ?
-  `).all(userId) as any[];
+    FROM users WHERE sponsor_id = ${userId}
+  `;
 }
 
-export function getNetworkStats(userId: number) {
-  const direct = getDb().prepare('SELECT COUNT(*) as count FROM users WHERE sponsor_id = ?').get(userId) as any;
-  const allDownlines = getNetworkCount(userId);
-  return { directCount: direct.count, totalNetwork: allDownlines };
+export async function getNetworkStats(userId: number) {
+  const sql = await getDb();
+  const [direct] = await sql`SELECT COUNT(*) as count FROM users WHERE sponsor_id = ${userId}`;
+  const total = await getNetworkCount(userId);
+  return { directCount: Number(direct.count), totalNetwork: total };
 }
 
-function getNetworkCount(userId: number, depth = 0): number {
+async function getNetworkCount(userId: number, depth = 0): Promise<number> {
   if (depth > 10) return 0;
-  const children = getDb().prepare('SELECT id FROM users WHERE sponsor_id = ?').all(userId) as any[];
+  const sql = await getDb();
+  const children = await sql`SELECT id FROM users WHERE sponsor_id = ${userId}`;
   let count = children.length;
-  for (const child of children) count += getNetworkCount(child.id, depth + 1);
+  for (const child of children) count += await getNetworkCount(child.id, depth + 1);
   return count;
 }
 
-export function getAllUsers() {
-  return getDb().prepare(`
+export async function getAllUsers() {
+  const sql = await getDb();
+  return await sql`
     SELECT u.*, s.name as sponsor_name FROM users u
     LEFT JOIN users s ON u.sponsor_id = s.id
     ORDER BY u.created_at DESC
-  `).all() as any[];
+  `;
 }
 
-export function getSystemStats() {
-  const db2 = getDb();
-  const totalUsers = (db2.prepare('SELECT COUNT(*) as c FROM users WHERE role != ?').get('admin') as any).c;
-  const totalVolume = (db2.prepare('SELECT SUM(amount) as s FROM transactions WHERE type = ?').get('deposit') as any).s || 0;
-  const totalEarnings = (db2.prepare('SELECT SUM(amount) as s FROM earnings').get() as any).s || 0;
-  const activePackages = (db2.prepare('SELECT COUNT(*) as c FROM users WHERE package_level > 0').get() as any).c;
-  const suspended = (db2.prepare("SELECT COUNT(*) as c FROM users WHERE status = 'suspended'").get() as any).c;
-  const pendingWithdrawals = (db2.prepare("SELECT COUNT(*) as c FROM transactions WHERE type='withdrawal' AND status='pending'").get() as any).c;
-  const pendingVolume = (db2.prepare("SELECT COALESCE(SUM(amount),0) as s FROM transactions WHERE type='withdrawal' AND status='pending'").get() as any).s;
-  return { totalUsers, totalVolume, totalEarnings, activePackages, suspended, pendingWithdrawals, pendingVolume };
+export async function getSystemStats() {
+  const sql = await getDb();
+  const [
+    usersRow, volumeRow, earningsRow, packagesRow,
+    suspendedRow, pendingCountRow, pendingVolRow,
+  ] = await Promise.all([
+    sql`SELECT COUNT(*) as c FROM users WHERE role != 'admin'`,
+    sql`SELECT COALESCE(SUM(amount), 0) as s FROM transactions WHERE type = 'deposit'`,
+    sql`SELECT COALESCE(SUM(amount), 0) as s FROM earnings`,
+    sql`SELECT COUNT(*) as c FROM users WHERE package_level > 0`,
+    sql`SELECT COUNT(*) as c FROM users WHERE status = 'suspended'`,
+    sql`SELECT COUNT(*) as c FROM transactions WHERE type = 'withdrawal' AND status = 'pending'`,
+    sql`SELECT COALESCE(SUM(amount), 0) as s FROM transactions WHERE type = 'withdrawal' AND status = 'pending'`,
+  ]);
+  return {
+    totalUsers: Number(usersRow[0].c),
+    totalVolume: Number(volumeRow[0].s),
+    totalEarnings: Number(earningsRow[0].s),
+    activePackages: Number(packagesRow[0].c),
+    suspended: Number(suspendedRow[0].c),
+    pendingWithdrawals: Number(pendingCountRow[0].c),
+    pendingVolume: Number(pendingVolRow[0].s),
+  };
 }
 
-export function setUserStatus(userId: number, status: 'active' | 'suspended') {
-  getDb().prepare('UPDATE users SET status = ? WHERE id = ?').run(status, userId);
+export async function setUserStatus(userId: number, status: 'active' | 'suspended') {
+  const sql = await getDb();
+  await sql`UPDATE users SET status = ${status} WHERE id = ${userId}`;
 }
 
-export function adminSetPackage(userId: number, packageLevel: number) {
-  getDb().prepare('UPDATE users SET package_level = ? WHERE id = ?').run(packageLevel, userId);
+export async function adminSetPackage(userId: number, packageLevel: number) {
+  const sql = await getDb();
+  await sql`UPDATE users SET package_level = ${packageLevel} WHERE id = ${userId}`;
 }
 
-export function adminAdjustBalance(userId: number, amount: number, adminId: number, reason: string) {
-  getDb().prepare('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?').run(amount, userId);
-  getDb().prepare(`
+export async function adminAdjustBalance(userId: number, amount: number, _adminId: number, reason: string) {
+  const sql = await getDb();
+  await sql`UPDATE users SET wallet_balance = wallet_balance + ${amount} WHERE id = ${userId}`;
+  await sql`
     INSERT INTO transactions (user_id, type, amount, fee, net_amount, description, status)
-    VALUES (?, 'admin_adjustment', ?, 0, ?, ?, 'completed')
-  `).run(userId, Math.abs(amount), amount, `Admin: ${reason}`);
+    VALUES (${userId}, 'admin_adjustment', ${Math.abs(amount)}, 0, ${amount}, ${'Admin: ' + reason}, 'completed')
+  `;
 }
 
-export function deleteUser(userId: number) {
-  const db2 = getDb();
-  db2.prepare('DELETE FROM earnings WHERE user_id = ?').run(userId);
-  db2.prepare('DELETE FROM transactions WHERE user_id = ?').run(userId);
-  db2.prepare('UPDATE users SET sponsor_id = NULL WHERE sponsor_id = ?').run(userId);
-  db2.prepare('DELETE FROM users WHERE id = ?').run(userId);
+export async function deleteUser(userId: number) {
+  const sql = await getDb();
+  await sql`DELETE FROM earnings WHERE user_id = ${userId}`;
+  await sql`DELETE FROM transactions WHERE user_id = ${userId}`;
+  await sql`UPDATE users SET sponsor_id = NULL WHERE sponsor_id = ${userId}`;
+  await sql`DELETE FROM users WHERE id = ${userId}`;
 }
 
-export function getAllTransactions(limit = 100) {
-  return getDb().prepare(`
+export async function getAllTransactions(limit = 100) {
+  const sql = await getDb();
+  return await sql`
     SELECT t.*, u.name as user_name, u.email as user_email
     FROM transactions t
     LEFT JOIN users u ON t.user_id = u.id
-    ORDER BY t.created_at DESC LIMIT ?
-  `).all(limit) as any[];
+    ORDER BY t.created_at DESC LIMIT ${limit}
+  `;
 }
 
-export function approveWithdrawal(txId: number) {
-  getDb().prepare("UPDATE transactions SET status = 'completed' WHERE id = ?").run(txId);
+export async function approveWithdrawal(txId: number) {
+  const sql = await getDb();
+  await sql`UPDATE transactions SET status = 'completed' WHERE id = ${txId}`;
 }
 
-export function rejectWithdrawal(txId: number) {
-  const tx = getDb().prepare('SELECT * FROM transactions WHERE id = ?').get(txId) as any;
-  if (!tx) return;
-  getDb().prepare("UPDATE transactions SET status = 'rejected' WHERE id = ?").run(txId);
-  getDb().prepare('UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?').run(tx.amount, tx.user_id);
+export async function rejectWithdrawal(txId: number) {
+  const sql = await getDb();
+  const rows = await sql`SELECT * FROM transactions WHERE id = ${txId}`;
+  if (!rows[0]) return;
+  const tx = rows[0];
+  await sql`UPDATE transactions SET status = 'rejected' WHERE id = ${txId}`;
+  await sql`UPDATE users SET wallet_balance = wallet_balance + ${tx.amount} WHERE id = ${tx.user_id}`;
 }
 
-export function getGrowthData() {
-  const db2 = getDb();
-  const byDay = db2.prepare(`
-    SELECT DATE(created_at) as day, COUNT(*) as count
-    FROM users WHERE role != 'admin'
-    GROUP BY DATE(created_at) ORDER BY day DESC LIMIT 30
-  `).all() as any[];
-  const earningsByType = db2.prepare(`
-    SELECT type, SUM(amount) as total FROM earnings GROUP BY type
-  `).all() as any[];
-  const txByType = db2.prepare(`
-    SELECT type, COUNT(*) as count, COALESCE(SUM(amount),0) as total
-    FROM transactions GROUP BY type
-  `).all() as any[];
-  return { byDay: byDay.reverse(), earningsByType, txByType };
+export async function getGrowthData() {
+  const sql = await getDb();
+  const [byDay, earningsByType, txByType] = await Promise.all([
+    sql`
+      SELECT DATE(created_at) as day, COUNT(*) as count
+      FROM users WHERE role != 'admin'
+      GROUP BY DATE(created_at) ORDER BY day DESC LIMIT 30
+    `,
+    sql`SELECT type, SUM(amount) as total FROM earnings GROUP BY type`,
+    sql`SELECT type, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM transactions GROUP BY type`,
+  ]);
+  return { byDay: [...byDay].reverse(), earningsByType, txByType };
 }

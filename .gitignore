@@ -46,3 +46,5 @@ next-env.d.ts
 # claude internal
 CLAUDE.md
 AGENTS.md
+
+.vercel

@@ -7,8 +7,6 @@ export async function GET() {
   if (!session || session.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const users = getAllUsers();
-  const stats = getSystemStats();
-
+  const [users, stats] = await Promise.all([getAllUsers(), getSystemStats()]);
   return NextResponse.json({ users, stats });
 }

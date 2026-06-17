@@ -15,14 +15,14 @@ export async function POST(req: NextRequest) {
   if (!name || !email || !password)
     return NextResponse.json({ error: 'Name, email and password are required' }, { status: 400 });
 
-  if (getUserByEmail(email))
+  if (await getUserByEmail(email))
     return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
 
-  const pkg = PACKAGES.find(p => p.level === (packageLevel || 0));
+  PACKAGES.find(p => p.level === (packageLevel || 0));
   let sponsorId: number | undefined;
 
   if (referralCode) {
-    const sponsor = getUserByReferralCode(referralCode);
+    const sponsor = await getUserByReferralCode(referralCode);
     if (!sponsor) return NextResponse.json({ error: 'Invalid referral code' }, { status: 400 });
     sponsorId = sponsor.id;
   }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const passwordHash = await bcrypt.hash(password, 10);
   const newReferralCode = generateReferralCode(name);
 
-  const userId = createUser({
+  const userId = await createUser({
     name, email, passwordHash,
     referralCode: newReferralCode,
     sponsorId,

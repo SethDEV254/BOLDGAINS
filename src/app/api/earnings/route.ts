@@ -6,21 +6,23 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = getUserById(session.userId);
-  const earnings = getUserEarnings(session.userId);
-  const summary = getUserEarningsSummary(session.userId);
+  const [user, earnings, summary] = await Promise.all([
+    getUserById(session.userId),
+    getUserEarnings(session.userId),
+    getUserEarningsSummary(session.userId),
+  ]);
 
   const summaryMap: Record<string, number> = {};
-  for (const e of summary) summaryMap[e.type] = e.total;
+  for (const e of summary) summaryMap[e.type] = Number(e.total);
 
   return NextResponse.json({
     total: user?.total_earned || 0,
     summary: {
-      direct_bonus: summaryMap['direct_bonus'] || 0,
       upgrade_bonus: summaryMap['upgrade_bonus'] || 0,
-      leadership_pool: summaryMap['leadership_pool'] || 0,
       network_level: summaryMap['network_level'] || 0,
-      products: summaryMap['products'] || 0,
+      leadership_pool: summaryMap['leadership_pool'] || 0,
+      rank_pool: summaryMap['rank_pool'] || 0,
+      product_reorder: summaryMap['product_reorder'] || 0,
     },
     history: earnings,
   });

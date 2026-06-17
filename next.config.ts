@@ -1,10 +1,17 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['better-sqlite3'],
-  turbopack: {
-    root: __dirname,
-  },
+  transpilePackages: [
+    '@reown/appkit',
+    '@reown/appkit-adapter-wagmi',
+    '@walletconnect/ethereum-provider',
+    '@walletconnect/universal-provider',
+    '@walletconnect/sign-client',
+    '@walletconnect/utils',
+    '@wagmi/connectors',
+    '@wagmi/core',
+  ],
+  turbopack: {},
 };
 
 export default nextConfig;

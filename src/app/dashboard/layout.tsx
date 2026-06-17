@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Package, Network, TrendingUp, Wallet,
-  LogOut, Menu, X, Copy, Check, ChevronRight, Home,
+  LogOut, Menu, X, Copy, Check, ChevronRight, Home, ShoppingBag,
 } from 'lucide-react';
 
 const NAV = [
@@ -15,6 +15,7 @@ const NAV = [
   { href: '/dashboard/network', icon: Network, label: 'My Network' },
   { href: '/dashboard/earnings', icon: TrendingUp, label: 'Earnings' },
   { href: '/dashboard/wallet', icon: Wallet, label: 'Wallet' },
+  { href: '/dashboard/products', icon: ShoppingBag, label: 'Products' },
   { href: '/', icon: Home, label: 'Home' },
 ];
 
@@ -101,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#030300' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#000000' }}>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 border-r"
         style={{ background: 'rgba(6,4,0,0.95)', borderColor: 'rgba(120,53,15,0.25)' }}>

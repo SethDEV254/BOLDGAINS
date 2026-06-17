@@ -6,8 +6,10 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const user = getUserById(session.userId);
-  const transactions = getUserTransactions(session.userId, 50);
+  const [user, transactions] = await Promise.all([
+    getUserById(session.userId),
+    getUserTransactions(session.userId, 50),
+  ]);
 
   return NextResponse.json({ balance: user?.wallet_balance || 0, transactions });
 }
