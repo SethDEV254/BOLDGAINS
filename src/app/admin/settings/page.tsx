@@ -90,7 +90,7 @@ export default function SettingsPage() {
             <InfoRow label="Upgrade Bonus" value={`${(BONUS_RATES.upgrade_bonus * 100).toFixed(0)}%`} color="#34d399" />
             <InfoRow label="Leadership Pool" value={`${(BONUS_RATES.leadership_pool * 100).toFixed(0)}%`} color="#a78bfa" />
             <InfoRow label="Rank Pool" value={`${(BONUS_RATES.rank_pool * 100).toFixed(0)}%`} color="#fbbf24" />
-            <InfoRow label="Products" value={`${(BONUS_RATES.products * 100).toFixed(0)}%`} color="#fb7185" />
+            <InfoRow label="Product Reorder Bonus" value="45%" color="#fb7185" />
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Network Level Distribution</p>
