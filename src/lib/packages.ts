@@ -24,7 +24,8 @@ export const PACKAGES: Package[] = [
 ];
 
 // Fixed one-time fee paid at registration (no package assigned)
-export const REGISTRATION_FEE = 10; // $10 USD paid in BNB at live rate
+export const REGISTRATION_FEE = 10; // $10 USD base registration fee
+export const REGISTRATION_FEE_GROSS = 11; // $10 + 10% fee = $11 USD paid in BNB
 
 // Minimum withdrawal net amount in USD
 export const MIN_WITHDRAWAL_NET_USD = 10;
@@ -34,7 +35,7 @@ export const MIN_WITHDRAWAL_NET_USD = 10;
 // 35% stays in contract as liquidity pool
 export const BONUS_RATES = {
   management_fee_deposit:    0.10, // platform fee — stays in contract (accumulatedFees)
-  management_fee_withdrawal: 0.10,
+  management_fee_withdrawal: 0,
   upgrade_bonus:             0.20, // direct sponsor
   leadership_pool:           0.15, // → LEADERSHIP_POOL_ADDRESS
   rank_pool:                 0.10, // → RANK_POOL_ADDRESS

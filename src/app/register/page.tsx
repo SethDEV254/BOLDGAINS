@@ -6,7 +6,7 @@ import { useState, Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, ExternalLink, AlertCircle, Check, Wallet, Clock, ShieldCheck } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
-import { REGISTRATION_FEE } from '@/lib/packages';
+import { REGISTRATION_FEE, REGISTRATION_FEE_GROSS } from '@/lib/packages';
 import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
 
 type Step = 'form' | 'connecting' | 'confirm' | 'paying' | 'done';
@@ -29,13 +29,13 @@ function RegisterForm() {
 
   const pendingForm = useRef<typeof form | null>(null);
 
-  useEffect(() => { getBnbPrice().then(p => { setBnbPrice(p); setBnbAmount(usdToBnb(REGISTRATION_FEE, p)); }); }, []);
+  useEffect(() => { getBnbPrice().then(p => { setBnbPrice(p); setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, p)); }); }, []);
 
   // After wallet connects during 'connecting' step, move to confirm
   useEffect(() => {
     if (wallet.address && step === 'connecting' && pendingForm.current) {
       const price = bnbPrice;
-      if (price) setBnbAmount(usdToBnb(REGISTRATION_FEE, price));
+      if (price) setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, price));
       setStep('confirm');
     }
   }, [wallet.address, step, bnbPrice]);
@@ -54,7 +54,7 @@ function RegisterForm() {
 
     if (wallet.address) {
       const price = bnbPrice || await getBnbPrice();
-      setBnbAmount(usdToBnb(REGISTRATION_FEE, price));
+      setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, price));
       setStep('confirm');
       return;
     }
@@ -75,7 +75,7 @@ function RegisterForm() {
 
       if (wallet.isReady) {
         const price = bnbPrice || await getBnbPrice();
-        hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE, price), saved.email);
+        hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), saved.email);
         setTxHash(hash ?? '');
       }
 
@@ -130,7 +130,7 @@ function RegisterForm() {
             <span className="text-white font-black ml-3">${REGISTRATION_FEE} USD</span>
           </div>
           <div className="text-xs text-right">
-            <p className="text-gray-500">10% fee · net ${(REGISTRATION_FEE * 0.9).toFixed(2)} · paid in BNB</p>
+            <p className="text-gray-500">10% fee · net ${REGISTRATION_FEE_GROSS.toFixed(2)} · paid in BNB</p>
             <p className="text-amber-500/70">Activate package anytime after approval</p>
           </div>
         </div>
@@ -181,14 +181,15 @@ function RegisterForm() {
                   ['Username', form.name],
                   ['Email', form.email],
                   ['Wallet', `${wallet.address?.slice(0, 10)}…${wallet.address?.slice(-6)}`],
-                  ['Registration fee', `$${REGISTRATION_FEE} USD`],
+                  ['Base registration', `$${REGISTRATION_FEE} USD`],
                   ['Platform fee (10%)', `$${(REGISTRATION_FEE * 0.1).toFixed(2)} USD`],
+                  ['Total (net)', `$${REGISTRATION_FEE_GROSS} USD`],
                   ['You will pay', bnbAmount ? `${bnbAmount.toFixed(6)} BNB` : 'calculating…'],
                 ].map(([label, val], i) => (
                   <div key={i} className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                    style={{ borderBottom: i < 6 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                     <span className="text-xs text-gray-500">{label}</span>
-                    <span className={`text-sm font-semibold ${i === 5 ? 'text-amber-400' : 'text-white'}`}>{val}</span>
+                    <span className={`text-sm font-semibold ${i === 6 ? 'text-amber-400' : 'text-white'}`}>{val}</span>
                   </div>
                 ))}
               </div>
@@ -267,7 +268,7 @@ function RegisterForm() {
                   {wallet.connecting || step === 'connecting' ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> Connecting Wallet…</>
                   ) : wallet.address ? (
-                    <><Check className="w-5 h-5" /> Review &amp; Pay ${REGISTRATION_FEE}</>
+                    <><Check className="w-5 h-5" /> Review &amp; Pay ${REGISTRATION_FEE_GROSS}</>
                   ) : (
                     <><Wallet className="w-5 h-5" /> Connect Wallet &amp; Register</>
                   )}

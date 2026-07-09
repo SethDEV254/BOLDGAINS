@@ -130,7 +130,7 @@ export default function WalletPage() {
           <Wallet className="w-8 h-8 text-amber-400 mx-auto mb-2" />
           <p className="text-gray-400 text-xs mb-1">Platform Balance</p>
           <p className="text-4xl font-black gold-gradient">{(data?.balance || 0).toFixed(4)}</p>
-          <p className="text-gray-500 text-xs mt-1">BNB · 10% fee on all transactions</p>
+          <p className="text-gray-500 text-xs mt-1">BNB · 10% fee on deposits · no fee on withdrawals</p>
         </div>
 
         {/* MetaMask connect card */}
@@ -247,10 +247,12 @@ export default function WalletPage() {
                   <span className="text-gray-400">Amount</span>
                   <span className="text-white">{amt.toFixed(4)} BNB</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Platform Fee (10%)</span>
-                  <span className="text-red-400">-{fee.toFixed(4)} BNB</span>
-                </div>
+                {fee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Platform Fee (10%)</span>
+                    <span className="text-red-400">-{fee.toFixed(4)} BNB</span>
+                  </div>
+                )}
                 <div className="border-t border-white/10 pt-2 flex justify-between text-sm font-bold">
                   <span className="text-gray-300">Net {tab === 'deposit' ? 'Credited' : 'Received'}</span>
                   <span className={netBelowMin ? 'text-red-400' : 'text-emerald-400'}>{net.toFixed(4)} BNB</span>
@@ -290,9 +292,9 @@ export default function WalletPage() {
 
             {tab === 'withdraw' && (
               <p className="text-xs text-gray-600 text-center">
-                Minimum net: ${MIN_WITHDRAWAL_NET_USD} USD
+                Minimum withdrawal: ${MIN_WITHDRAWAL_NET_USD} USD
                 {minWithdrawBnb !== null ? ` (~${minWithdrawBnb.toFixed(5)} BNB)` : ''}
-                {' · '}10% fee · paid in BNB · admin approval required.
+                {' · '}No fee · paid in BNB · admin approval required.
               </p>
             )}
           </div>
