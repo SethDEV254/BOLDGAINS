@@ -43,8 +43,10 @@ export async function GET() {
       getAllTransactions(500),
     ]);
 
-    const pk = process.env.OPERATOR_PRIVATE_KEY;
-    const operatorAddress = pk ? new Wallet(pk).address : '';
+    const opPk = process.env.OPERATOR_PRIVATE_KEY;
+    const ownPk = process.env.OWNER_PRIVATE_KEY;
+    const operatorAddress = opPk ? new Wallet(opPk).address : '';
+    const ownerAddress = ownPk ? new Wallet(ownPk).address : '';
 
     const pendingWithdrawals = (allTxs as any[]).filter(
       t => t.type === 'withdrawal' && t.status === 'pending',
@@ -55,7 +57,9 @@ export async function GET() {
       balance: formatEther(balWei),
       availableBalance: formatEther(availWei),
       operatorAddress,
-      hasOperator: !!pk,
+      ownerAddress,
+      hasOperator: !!opPk,
+      hasOwnerKey: !!ownPk,
       paused: isPaused,
       chainId: Number(chainId),
       pendingWithdrawals,
@@ -74,37 +78,44 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action, txId, to, amount } = body;
 
-  const pk = process.env.OPERATOR_PRIVATE_KEY;
-  if (!pk) return NextResponse.json({ error: 'OPERATOR_PRIVATE_KEY not set' }, { status: 500 });
+  const operatorPk = process.env.OPERATOR_PRIVATE_KEY;
+  const ownerPk = process.env.OWNER_PRIVATE_KEY || process.env.OPERATOR_PRIVATE_KEY;
+  if (!operatorPk) return NextResponse.json({ error: 'OPERATOR_PRIVATE_KEY not set' }, { status: 500 });
+
+  const OWNER_ONLY = ['pause', 'unpause', 'collectFees', 'emergencyWithdraw'];
+  if (OWNER_ONLY.includes(action) && !process.env.OWNER_PRIVATE_KEY)
+    return NextResponse.json({ error: 'OWNER_PRIVATE_KEY not set — owner-only actions require the contract owner\'s private key' }, { status: 500 });
 
   try {
     const { Wallet, Contract, parseEther, formatEther } = await import('ethers');
     const { CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
 
     const provider = await getProvider();
-    const signer = new Wallet(pk, provider);
-    const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    const operatorSigner = new Wallet(operatorPk!, provider);
+    const ownerSigner = new Wallet(ownerPk!, provider);
+    const operatorContract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, operatorSigner);
+    const ownerContract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, ownerSigner);
 
     if (action === 'pause') {
-      const tx = await contract.pause();
+      const tx = await ownerContract.pause();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
 
     if (action === 'unpause') {
-      const tx = await contract.unpause();
+      const tx = await ownerContract.unpause();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
 
     if (action === 'collectFees') {
-      const tx = await contract.collectFees();
+      const tx = await ownerContract.collectFees();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
 
     if (action === 'emergencyWithdraw') {
-      const tx = await contract.emergencyWithdraw();
+      const tx = await ownerContract.emergencyWithdraw();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
@@ -120,12 +131,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'No valid BSC address for this user' }, { status: 400 });
 
       const amountWei = parseEther(parseFloat(withdrawal.net_amount).toFixed(8));
-      const available = await contract.availableBalance().catch(() => BigInt(0));
+      const available = await operatorContract.availableBalance().catch(() => BigInt(0));
       if (available < amountWei)
         return NextResponse.json({
           error: `Insufficient contract balance. Available: ${parseFloat(formatEther(available)).toFixed(4)} BNB. Fund the contract first.`,
         }, { status: 400 });
-      const tx = await contract.processWithdrawal(bscAddress, amountWei, txId.toString());
+      const tx = await operatorContract.processWithdrawal(bscAddress, amountWei, txId.toString());
       const receipt = await tx.wait();
       await approveWithdrawal(txId);
       return NextResponse.json({ success: true, txHash: receipt.hash });
@@ -140,12 +151,12 @@ export async function POST(req: NextRequest) {
       if (!/^0x[0-9a-fA-F]{40}$/.test(to))
         return NextResponse.json({ error: 'Invalid BSC address' }, { status: 400 });
       const amountWei = parseEther(parseFloat(amount).toFixed(8));
-      const available = await contract.availableBalance().catch(() => BigInt(0));
+      const available = await operatorContract.availableBalance().catch(() => BigInt(0));
       if (available < amountWei)
         return NextResponse.json({
           error: `Insufficient contract balance. Available: ${parseFloat(formatEther(available)).toFixed(4)} BNB, requested: ${amount} BNB. Fund the contract first.`,
         }, { status: 400 });
-      const tx = await contract.processWithdrawal(to, amountWei, 'manual-admin');
+      const tx = await operatorContract.processWithdrawal(to, amountWei, 'manual-admin');
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
