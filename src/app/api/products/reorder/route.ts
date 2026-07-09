@@ -57,14 +57,17 @@ export async function POST(req: NextRequest) {
 
   if (payouts.length > 0) await distributePayouts(payouts);
 
-  // Send leadership and rank pool cuts to pool wallets
+  // Send pool cuts sequentially — parallel txs from same wallet cause nonce conflicts
   const reorderRef = `reorder-${session.userId}-${Date.now()}`;
-  sendToPool('leadership', pkg.price * REORDER_BONUS_RATES.leadership_pool, `${reorderRef}-leadership`)
-    .catch(err => console.error('[reorder] leadership pool failed:', err));
-  sendToPool('rank', pkg.price * REORDER_BONUS_RATES.rank_pool, `${reorderRef}-rank`)
-    .catch(err => console.error('[reorder] rank pool failed:', err));
-  sendToPool('products', pkg.price * REORDER_BONUS_RATES.products, `${reorderRef}-products`)
-    .catch(err => console.error('[reorder] products pool failed:', err));
+  (async () => {
+    try {
+      await sendToPool('products',    pkg.price * REORDER_BONUS_RATES.products,        `${reorderRef}-products`);
+      await sendToPool('leadership',  pkg.price * REORDER_BONUS_RATES.leadership_pool,  `${reorderRef}-leadership`);
+      await sendToPool('rank',        pkg.price * REORDER_BONUS_RATES.rank_pool,        `${reorderRef}-rank`);
+    } catch (err) {
+      console.error('[reorder] pool payout failed:', err);
+    }
+  })();
 
   return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price, levelsRewarded: payouts.length });
 }

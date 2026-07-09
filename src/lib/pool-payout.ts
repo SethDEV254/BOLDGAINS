@@ -50,10 +50,9 @@ export async function distributePoolSplit(
   const leadership = grossBnb * leadershipRate;
   const rank       = grossBnb * rankRate;
 
-  const [lTx, rTx] = await Promise.all([
-    sendToPool('leadership', leadership, `${ref}-leadership`),
-    sendToPool('rank',       rank,       `${ref}-rank`),
-  ]);
+  // Sequential — parallel calls from the same wallet cause nonce conflicts
+  const lTx = await sendToPool('leadership', leadership, `${ref}-leadership`);
+  const rTx = await sendToPool('rank',       rank,       `${ref}-rank`);
 
   return { leadership, rank, leadershipTx: lTx, rankTx: rTx };
 }
