@@ -2,14 +2,16 @@
 
 import { useAppKit } from '@reown/appkit/react';
 import { useAccount, useDisconnect, useBalance, useWalletClient, useSwitchChain } from 'wagmi';
-import { BrowserProvider, JsonRpcSigner, Contract, parseEther, formatUnits } from 'ethers';
+import { BrowserProvider, JsonRpcSigner, Contract, parseEther, formatUnits, Network } from 'ethers';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '@/lib/contract';
 
 const BSC_CHAIN_ID = 56;
 
 async function getEthersSigner(walletClient: any): Promise<JsonRpcSigner> {
   const { account, chain, transport } = walletClient;
-  const provider = new BrowserProvider(transport, { chainId: chain.id, name: chain.name });
+  // Use Network instance so ENS address stays null — BSC doesn't support ENS
+  const network = new Network(chain.name, chain.id);
+  const provider = new BrowserProvider(transport, network);
   return new JsonRpcSigner(provider, account.address);
 }
 
