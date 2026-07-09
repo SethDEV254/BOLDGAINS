@@ -9,7 +9,7 @@ import { useWallet } from '@/hooks/use-wallet';
 import {
   ChevronRight, TrendingUp, Users, Zap, Star, Award,
   Globe, Flame, Crown, Diamond, LogOut, UserPlus, Menu, X, Sparkles,
-  Wallet, Loader2,
+  Wallet, Loader2, ShieldCheck, Clock, ArrowRight, ChevronDown,
 } from 'lucide-react';
 
 const BONUS_FEATURES = [
@@ -28,6 +28,53 @@ const STATS = [
 ];
 
 const TIER_ICONS: Record<number, any> = { 10: Diamond, 11: Flame, 12: Crown };
+
+const FAQS = [
+  { q: 'What is Bold Gains International?', a: 'Bold Gains is a product-backed network marketing platform on BSC. Members earn BNB bonuses by building a network that sells BoldGlow™ skincare products and upgrades membership packages.' },
+  { q: 'How do I earn money?', a: 'You earn through five streams: a 20% upgrade bonus when direct referrals upgrade, 10% across 10 network levels on every upgrade/deposit, 15% leadership pool, 10% rank pool, and up to 45% reorder bonus when your network reorders BoldGlow™ products.' },
+  { q: 'What wallet do I need?', a: 'Any BSC-compatible wallet works — MetaMask, Trust Wallet, Binance Web3 Wallet, or any WalletConnect wallet. You need BNB on BSC (BEP-20) to pay the registration fee and packages.' },
+  { q: 'Is the smart contract audited?', a: 'Yes. BoldGainsWallet V2 is deployed on BSC with Ownable2Step, ReentrancyGuard, and Pausable protections. Batch payouts fail safely — individual failures are logged on-chain without blocking the rest.' },
+  { q: 'How long does activation take?', a: 'Registration payment is instant on BSC (~3 seconds). Admin approval typically happens within 24 hours. Once approved, you can activate a package immediately.' },
+  { q: 'What is the minimum withdrawal?', a: 'The minimum net withdrawal is $10 USD equivalent in BNB. A 10% platform fee applies on withdrawal. There is no maximum.' },
+  { q: 'Can I join without a sponsor?', a: 'Yes — you can register without a referral link. You will still earn all bonuses from your own downline. Having a sponsor just means someone above you also earns a level bonus from your activity.' },
+  { q: 'What packages are available?', a: 'There are 12 membership tiers from Signature ($20) to Crown Diamond ($15,000). Each tier unlocks BoldGlow™ product allocations and increases your earning potential from your network.' },
+];
+
+function FaqSection() {
+  const [open, setOpen] = useState<number | null>(null);
+
+  return (
+    <section className="py-32 px-6 relative" style={{ background: '#000' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 40% at 80% 50%, rgba(255,100,0,0.04) 0%, transparent 60%)' }} />
+      <div className="relative max-w-3xl mx-auto">
+        <div className="mb-16 text-center">
+          <p className="text-xs font-bold tracking-[0.3em] mb-3 uppercase" style={{ color: '#FF8C00' }}>FAQ</p>
+          <h2 className="font-black" style={{ fontSize: 'clamp(2rem, 5vw, 3.4rem)', lineHeight: 1 }}>
+            <span className="text-white">Common </span><span className="gold-gradient">Questions</span>
+          </h2>
+        </div>
+        <div className="space-y-3">
+          {FAQS.map((faq, i) => (
+            <div key={i} className="rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer"
+              style={{ background: open === i ? 'rgba(255,140,0,0.06)' : 'rgba(255,255,255,0.025)', border: open === i ? '1px solid rgba(255,140,0,0.2)' : '1px solid rgba(255,255,255,0.06)' }}
+              onClick={() => setOpen(open === i ? null : i)}>
+              <div className="flex items-center justify-between px-6 py-5 gap-4">
+                <p className="text-sm font-semibold text-white">{faq.q}</p>
+                <ChevronDown className="w-4 h-4 flex-shrink-0 transition-transform duration-300" style={{ color: '#FF8C00', transform: open === i ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+              </div>
+              {open === i && (
+                <div className="px-6 pb-5">
+                  <div className="h-px mb-4" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  <p className="text-sm leading-relaxed" style={{ color: '#888' }}>{faq.a}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function LandingPage() {
   const router = useRouter();
@@ -263,6 +310,113 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── How It Works ── */}
+      <section className="py-32 px-6 relative overflow-hidden" style={{ background: '#000' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(255,80,0,0.06) 0%, transparent 60%)' }} />
+        <div className="relative max-w-7xl mx-auto">
+          <div className="mb-20">
+            <p className="text-xs font-bold tracking-[0.3em] mb-3 uppercase" style={{ color: '#FF8C00' }}>Get Started</p>
+            <div className="flex items-end justify-between gap-4 flex-wrap">
+              <h2 className="font-black" style={{ fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', lineHeight: 1 }}>
+                <span className="text-white">How It</span><span className="gold-gradient"> Works</span>
+              </h2>
+              <p className="text-sm max-w-xs pb-1" style={{ color: '#555' }}>Live on BSC — transparent, instant, on-chain.</p>
+            </div>
+            <div className="mt-6 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { step: '01', title: 'Connect Wallet', desc: 'Connect MetaMask, Trust Wallet, or any WalletConnect-compatible wallet. No KYC required.', color: '#f59e0b', icon: Wallet },
+              { step: '02', title: 'Pay Registration', desc: 'Pay a one-time $10 USD registration fee in BNB on BSC. Your account is activated after admin approval.', color: '#10b981', icon: ShieldCheck },
+              { step: '03', title: 'Choose a Package', desc: 'Activate a membership package from $20 (Signature) up to $15,000 (Crown Diamond) to unlock earning.', color: '#3b82f6', icon: Award },
+              { step: '04', title: 'Earn & Grow', desc: 'Refer others, earn upgrade bonuses, network level income, leadership pool shares, and product reorder cuts — all paid in BNB.', color: '#a78bfa', icon: TrendingUp },
+            ].map((s, i) => (
+              <div key={i} className="relative group">
+                {i < 3 && (
+                  <div className="hidden lg:block absolute top-10 left-full w-6 z-10 -translate-x-3">
+                    <ArrowRight className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.12)' }} />
+                  </div>
+                )}
+                <div className="rounded-2xl p-7 h-full transition-all duration-500"
+                  style={{ background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${s.color}08`; el.style.border = `1px solid ${s.color}33`; el.style.transform = 'translateY(-4px)'; }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.022)'; el.style.border = '1px solid rgba(255,255,255,0.07)'; el.style.transform = 'translateY(0)'; }}>
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="text-4xl font-black tabular-nums" style={{ color: 'rgba(255,255,255,0.06)', letterSpacing: '-0.04em' }}>{s.step}</span>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${s.color}12`, border: `1px solid ${s.color}22` }}>
+                      <s.icon className="w-5 h-5" style={{ color: s.color }} />
+                    </div>
+                  </div>
+                  <h3 className="text-white font-bold text-lg mb-3 tracking-tight">{s.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#555' }}>{s.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── About the Platform ── */}
+      <section className="py-32 px-6 relative overflow-hidden" style={{ background: '#000' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 50% at 20% 50%, rgba(255,100,0,0.05) 0%, transparent 60%)' }} />
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div>
+              <p className="text-xs font-bold tracking-[0.3em] mb-4 uppercase" style={{ color: '#FF8C00' }}>About Bold Gains</p>
+              <h2 className="font-black mb-6" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.4rem)', lineHeight: 1.05 }}>
+                <span className="text-white">A Network Built on</span>
+                <br /><span className="gold-gradient">Transparency & BNB</span>
+              </h2>
+              <p className="text-base leading-relaxed mb-6" style={{ color: '#666' }}>
+                Bold Gains International is a product-backed network marketing platform operating entirely on the Binance Smart Chain. Every payment — registration fees, upgrade bonuses, network commissions — is processed on-chain in BNB. No middlemen, no delays, no excuses.
+              </p>
+              <p className="text-base leading-relaxed mb-10" style={{ color: '#666' }}>
+                Our flagship product, <span style={{ color: '#FFB800', fontWeight: 600 }}>BoldGlow™ Gold Mask</span>, is a premium anti-aging face mask formulated with Retinol, Snake Venom Peptides, and 24K Gold. Members earn by building a network of genuine product consumers — not just recruiters.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: 'Blockchain', value: 'BSC (BEP-20)', color: '#f59e0b' },
+                  { label: 'Currency', value: 'BNB', color: '#10b981' },
+                  { label: 'Smart Contract', value: 'Audited V2', color: '#3b82f6' },
+                  { label: 'Payouts', value: 'Instant On-chain', color: '#a78bfa' },
+                ].map((item, i) => (
+                  <div key={i} className="p-4 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: '#444' }}>{item.label}</p>
+                    <p className="text-sm font-bold" style={{ color: item.color }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[
+                { icon: ShieldCheck, title: 'Smart Contract Secured', desc: 'All funds flow through an audited smart contract on BSC. Payouts are triggered programmatically — no manual processing.', color: '#10b981' },
+                { icon: Clock, title: 'Real-Time Earnings', desc: 'Bonuses credit to your wallet balance immediately when your referrals transact. Withdraw anytime above the minimum threshold.', color: '#f59e0b' },
+                { icon: Users, title: '10-Level Deep Network', desc: 'Earn passive income from up to 10 levels below you. The deeper your network grows, the more you earn — automatically.', color: '#3b82f6' },
+                { icon: Globe, title: 'Global & Borderless', desc: 'Anyone with a BSC wallet can join from anywhere in the world. No bank account, no documents, no geographic restrictions.', color: '#a78bfa' },
+              ].map((item, i) => (
+                <div key={i} className="flex gap-5 p-5 rounded-2xl transition-all duration-300"
+                  style={{ background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = `${item.color}08`; el.style.border = `1px solid ${item.color}25`; }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(255,255,255,0.022)'; el.style.border = '1px solid rgba(255,255,255,0.06)'; }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${item.color}12`, border: `1px solid ${item.color}22` }}>
+                    <item.icon className="w-5 h-5" style={{ color: item.color }} />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold mb-1">{item.title}</h4>
+                    <p className="text-sm leading-relaxed" style={{ color: '#555' }}>{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <FaqSection />
+
       {/* ── BoldGlow Product ── */}
       <section className="py-32 px-6 relative overflow-hidden" style={{ background: '#000' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255,184,0,0.04) 0%, transparent 70%)' }} />
@@ -423,14 +577,45 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="relative" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: '#000' }}>
-        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Image src="/logo.jpeg" alt="Bold Gains" width={30} height={30} className="rounded-full opacity-50" />
-            <span className="font-black tracking-[0.15em] gold-gradient text-sm">BOLD GAINS™</span>
+        <div className="max-w-7xl mx-auto px-6 pt-14 pb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-12">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <Image src="/logo.jpeg" alt="Bold Gains" width={34} height={34} className="rounded-full"
+                  style={{ border: '1px solid rgba(255,184,0,0.2)', boxShadow: '0 0 12px rgba(255,140,0,0.2)' }} />
+                <span className="font-black tracking-[0.15em] gold-gradient text-sm">BOLD GAINS™</span>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: '#444' }}>
+                A global product-backed network marketing platform operating on Binance Smart Chain.
+                Transparent. On-chain. Borderless.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#555' }}>Platform</p>
+              <div className="space-y-2.5 text-xs" style={{ color: '#444' }}>
+                <Link href="/register" className="block transition-colors hover:text-amber-500">Join Now</Link>
+                <Link href="/login" className="block transition-colors hover:text-amber-500">Member Login</Link>
+                <a href="#" className="block transition-colors hover:text-amber-500">BoldGlow™ Products</a>
+                <a href="#" className="block transition-colors hover:text-amber-500">Leadership Pool</a>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#555' }}>Network</p>
+              <div className="space-y-2.5 text-xs" style={{ color: '#444' }}>
+                <p>Blockchain: <span style={{ color: '#666' }}>BSC (BEP-20)</span></p>
+                <p>Token: <span style={{ color: '#666' }}>BNB</span></p>
+                <p>Contract: <span style={{ color: '#666' }}>V2 Audited</span></p>
+                <p>Support: <span style={{ color: '#666' }}>dollarpath1@gmail.com</span></p>
+              </div>
+            </div>
           </div>
-          <p className="text-xs" style={{ color: '#2a2a2a', letterSpacing: '0.05em' }}>© {new Date().getFullYear()} BOLD GAINS INTERNATIONAL. ALL RIGHTS RESERVED.</p>
-          <div className="flex items-center gap-6 text-xs" style={{ color: '#333' }}>
-            <Link href="/login" className="transition-colors hover:text-amber-500 tracking-wide">Login</Link>
+          <div className="h-px mb-8" style={{ background: 'rgba(255,255,255,0.04)' }} />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: '#2a2a2a', letterSpacing: '0.05em' }}>
+            <p>© {new Date().getFullYear()} BOLD GAINS INTERNATIONAL. ALL RIGHTS RESERVED.</p>
+            <div className="flex items-center gap-6" style={{ color: '#333' }}>
+              <Link href="/login" className="transition-colors hover:text-amber-500 tracking-wide">Login</Link>
+              <Link href="/register" className="transition-colors hover:text-amber-500 tracking-wide">Register</Link>
+            </div>
           </div>
         </div>
       </footer>
