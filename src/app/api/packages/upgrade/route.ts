@@ -72,24 +72,23 @@ export async function POST(req: NextRequest) {
 
   await updateUserPackage(session.userId, packageLevel);
 
-  // Send leadership and rank pool cuts directly to pool wallets
+  // Fire-and-forget — sequential so both operator-wallet TXs never race on nonce
   if (txHash) {
-    distributePoolSplit(
-      gross,
-      BONUS_RATES.leadership_pool,
-      BONUS_RATES.rank_pool,
-      txHash,
-    ).catch(err => console.error('[upgrade] pool split failed:', err));
-  }
-
-  if (user.sponsor_id) {
-    await distributePayouts([{
-      userId: user.sponsor_id,
-      amount: gross * BONUS_RATES.upgrade_bonus,
-      type: 'upgrade_bonus',
-      description: `Upgrade bonus — ${user.name} → ${newPkg.name}`,
-      sourceUserId: session.userId,
-    }]);
+    const sponsorId = user.sponsor_id;
+    const bonusDesc = `Upgrade bonus — ${user.name} → ${newPkg.name}`;
+    const callerUserId = session.userId;
+    (async () => {
+      if (sponsorId) {
+        await distributePayouts([{
+          userId: sponsorId,
+          amount: gross * BONUS_RATES.upgrade_bonus,
+          type: 'upgrade_bonus',
+          description: bonusDesc,
+          sourceUserId: callerUserId,
+        }]);
+      }
+      await distributePoolSplit(gross, BONUS_RATES.leadership_pool, BONUS_RATES.rank_pool, txHash);
+    })().catch(err => console.error('[upgrade] payout failed:', err));
   }
 
   return NextResponse.json({ success: true, package: newPkg });

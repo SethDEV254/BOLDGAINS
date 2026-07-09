@@ -4,6 +4,7 @@ import { getUserById, createTransaction, updateWalletBalance } from '@/lib/db';
 import { REORDER_PACKAGES, REORDER_LEVEL_DISTRIBUTION, REORDER_BONUS_RATES } from '@/lib/packages';
 import { distributePayouts, PayoutItem } from '@/lib/payout';
 import { sendToPool } from '@/lib/pool-payout';
+import { getBnbPrice } from '@/lib/bnb-price';
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -20,21 +21,25 @@ export async function POST(req: NextRequest) {
   if (user.package_level === 0)
     return NextResponse.json({ error: 'You need an active membership package to reorder' }, { status: 403 });
 
-  if (user.wallet_balance < pkg.price)
-    return NextResponse.json({ error: 'Insufficient wallet balance' }, { status: 400 });
+  // pkg.price is in USD — convert to BNB for all on-chain and wallet_balance operations
+  const bnbPrice = await getBnbPrice();
+  const pkgBnb = pkg.price / bnbPrice;
 
-  await updateWalletBalance(session.userId, -pkg.price);
+  if (user.wallet_balance < pkgBnb)
+    return NextResponse.json({ error: 'Insufficient wallet balance' }, { status: 400 });
 
   await createTransaction({
     userId: session.userId,
     type: 'product_reorder',
-    amount: pkg.price,
+    amount: pkgBnb,
     fee: 0,
-    netAmount: pkg.price,
+    netAmount: pkgBnb,
     description: `BoldGlow™ Reorder — ${pkg.qty} unit${pkg.qty > 1 ? 's' : ''}`,
   });
 
-  // Walk up to 10 upline levels and pay each their share of the 30%
+  await updateWalletBalance(session.userId, -pkgBnb);
+
+  // Walk up to 10 upline levels and pay each their share of the 15%
   const payouts: PayoutItem[] = [];
   let currentId: number | null = user.sponsor_id ?? null;
 
@@ -46,7 +51,7 @@ export async function POST(req: NextRequest) {
     const rate = REORDER_LEVEL_DISTRIBUTION[level];
     payouts.push({
       userId: upline.id,
-      amount: pkg.price * rate,
+      amount: pkgBnb * rate,
       type: 'product_reorder',
       description: `Product Reorder Bonus L${level + 1} — ${user.name} (${pkg.qty} units)`,
       sourceUserId: session.userId,
@@ -55,19 +60,16 @@ export async function POST(req: NextRequest) {
     currentId = upline.sponsor_id ?? null;
   }
 
-  if (payouts.length > 0) await distributePayouts(payouts);
-
-  // Send pool cuts sequentially — parallel txs from same wallet cause nonce conflicts
+  // Sequential fire-and-forget — network payouts then pool cuts share the operator wallet;
+  // parallel calls would cause nonce conflicts.
   const reorderRef = `reorder-${session.userId}-${Date.now()}`;
+  const paidLevels = payouts.length;
   (async () => {
-    try {
-      await sendToPool('products',    pkg.price * REORDER_BONUS_RATES.products,        `${reorderRef}-products`);
-      await sendToPool('leadership',  pkg.price * REORDER_BONUS_RATES.leadership_pool,  `${reorderRef}-leadership`);
-      await sendToPool('rank',        pkg.price * REORDER_BONUS_RATES.rank_pool,        `${reorderRef}-rank`);
-    } catch (err) {
-      console.error('[reorder] pool payout failed:', err);
-    }
-  })();
+    if (payouts.length > 0) await distributePayouts(payouts);
+    await sendToPool('products',   pkgBnb * REORDER_BONUS_RATES.products,       `${reorderRef}-products`);
+    await sendToPool('leadership', pkgBnb * REORDER_BONUS_RATES.leadership_pool, `${reorderRef}-leadership`);
+    await sendToPool('rank',       pkgBnb * REORDER_BONUS_RATES.rank_pool,       `${reorderRef}-rank`);
+  })().catch(err => console.error('[reorder] payout failed:', err));
 
-  return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price, levelsRewarded: payouts.length });
+  return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price, levelsRewarded: paidLevels });
 }

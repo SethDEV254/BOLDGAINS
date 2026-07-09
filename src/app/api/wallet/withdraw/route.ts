@@ -29,8 +29,6 @@ export async function POST(req: NextRequest) {
       error: `Minimum withdrawal net is $${MIN_WITHDRAWAL_NET_USD} USD. Your net would be $${netUsd.toFixed(2)} USD.`,
     }, { status: 400 });
 
-  await updateWalletBalance(session.userId, -amount);
-
   await createTransaction({
     userId: session.userId, type: 'withdrawal',
     amount, fee, netAmount: net,
@@ -38,6 +36,8 @@ export async function POST(req: NextRequest) {
     reference: walletAddress || undefined,
     status: 'pending',
   });
+
+  await updateWalletBalance(session.userId, -amount);
 
   return NextResponse.json({ success: true, amount, fee, net });
 }

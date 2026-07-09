@@ -31,7 +31,7 @@ export async function sendToPool(
   try {
     const signer   = getSigner();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    const amountWei = parseUnits(amountBnb.toFixed(18), 18);
+    const amountWei = parseUnits(amountBnb.toFixed(8), 18);
     const tx = await contract.processWithdrawal(address, amountWei, ref);
     await tx.wait();
     return tx.hash as string;

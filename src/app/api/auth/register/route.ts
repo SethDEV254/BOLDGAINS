@@ -84,21 +84,15 @@ export async function POST(req: NextRequest) {
       reference: txHash || undefined,
     });
 
-    // Send net registration fee to dedicated registration wallet
-    if (txHash) {
-      sendToPool('registration', verifiedNet, `reg-${txHash}`)
-        .catch(err => console.error('[register] registration pool failed:', err));
-    }
-
+    const networkPayouts: PayoutItem[] = [];
     if (sponsor) {
-      const payouts: PayoutItem[] = [];
       let currentSponsor = sponsor;
       let level = 1;
 
       while (currentSponsor && level <= NETWORK_LEVEL_DISTRIBUTION.length) {
         const rate = NETWORK_LEVEL_DISTRIBUTION[level - 1] || 0;
         if (rate > 0) {
-          payouts.push({
+          networkPayouts.push({
             userId: currentSponsor.id,
             amount: verifiedGross * rate,
             type: 'network_level',
@@ -112,8 +106,16 @@ export async function POST(req: NextRequest) {
         currentSponsor = upline;
         level++;
       }
+    }
 
-      await distributePayouts(payouts);
+    // Fire-and-forget — sequential so pool TX and batchPayout never race on the same operator nonce
+    if (txHash || networkPayouts.length) {
+      const poolRef = txHash ? `reg-${txHash}` : null;
+      const net = verifiedNet;
+      (async () => {
+        if (poolRef) await sendToPool('registration', net, poolRef);
+        if (networkPayouts.length) await distributePayouts(networkPayouts);
+      })().catch(err => console.error('[register] payout failed:', err));
     }
 
     return NextResponse.json({ success: true, pending: true });
