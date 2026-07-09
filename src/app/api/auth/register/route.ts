@@ -5,7 +5,7 @@ import {
   createTransaction, getTransactionByReference, getUserById,
 } from '@/lib/db';
 import { generateReferralCode } from '@/lib/auth';
-import { REGISTRATION_FEE, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { REGISTRATION_FEE_GROSS, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
 import { distributePayouts, PayoutItem } from '@/lib/payout';
 import { sendToPool } from '@/lib/pool-payout';
 
@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
       sponsor = await getUserByBscAddress(refWallet);
     }
 
-    let verifiedGross = REGISTRATION_FEE;
-    let verifiedFee   = REGISTRATION_FEE * BONUS_RATES.management_fee_deposit;
+    let verifiedGross = REGISTRATION_FEE_GROSS;
+    let verifiedFee   = REGISTRATION_FEE_GROSS * BONUS_RATES.management_fee_deposit;
     let verifiedNet   = verifiedGross - verifiedFee;
 
     if (txHash) {
