@@ -5,7 +5,7 @@ import {
   createTransaction, getTransactionByReference,
 } from '@/lib/db';
 import { generateReferralCode } from '@/lib/auth';
-import { REGISTRATION_FEE_GROSS, BONUS_RATES, REGISTRATION_REFERRER_RATE } from '@/lib/packages';
+import { REGISTRATION_FEE, REGISTRATION_FEE_GROSS, BONUS_RATES, REGISTRATION_REFERRER_RATE } from '@/lib/packages';
 
 export async function POST(req: NextRequest) {
   try {
@@ -85,7 +85,8 @@ export async function POST(req: NextRequest) {
 
     // 50% of net → direct referrer on-chain; 50% stays in contract
     if (sponsor?.bsc_address && /^0x[0-9a-fA-F]{40}$/.test(sponsor.bsc_address) && txHash) {
-      const referralAmount = verifiedNet * REGISTRATION_REFERRER_RATE;
+      // 50% of base $10 fee = $5 (not 50% of net $9.90)
+      const referralAmount = verifiedGross * (REGISTRATION_FEE / REGISTRATION_FEE_GROSS) * REGISTRATION_REFERRER_RATE;
       const ref = `reg-ref-${userId}`;
       (async () => {
         try {
