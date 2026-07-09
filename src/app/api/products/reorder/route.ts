@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     .catch(err => console.error('[reorder] leadership pool failed:', err));
   sendToPool('rank', pkg.price * REORDER_BONUS_RATES.rank_pool, `${reorderRef}-rank`)
     .catch(err => console.error('[reorder] rank pool failed:', err));
-  sendToPool('products', pkg.price * REORDER_BONUS_RATES.network_level, `${reorderRef}-products`)
+  sendToPool('products', pkg.price * REORDER_BONUS_RATES.products, `${reorderRef}-products`)
     .catch(err => console.error('[reorder] products pool failed:', err));
 
   return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price, levelsRewarded: payouts.length });

@@ -29,13 +29,17 @@ export const REGISTRATION_FEE = 10; // $10 USD paid in BNB at live rate
 // Minimum withdrawal net amount in USD
 export const MIN_WITHDRAWAL_NET_USD = 10;
 
+// Upgrade / Deposit split (must total 100%)
+// 10% platform fee + 15% leadership + 10% rank + 20% sponsor + 10% network = 65% out
+// 35% stays in contract as liquidity pool
 export const BONUS_RATES = {
-  management_fee_deposit: 0.10,
+  management_fee_deposit:    0.10, // platform fee — stays in contract (accumulatedFees)
   management_fee_withdrawal: 0.10,
-  upgrade_bonus: 0.30,
-  leadership_pool: 0.15,
-  rank_pool: 0.10,
-  network_level: 0.15,
+  upgrade_bonus:             0.20, // direct sponsor
+  leadership_pool:           0.15, // → LEADERSHIP_POOL_ADDRESS
+  rank_pool:                 0.10, // → RANK_POOL_ADDRESS
+  network_level:             0.10, // across 10 upline levels
+  // liquidity: 35% (implicit — not sent anywhere)
 };
 
 export interface ReorderPackage {
@@ -52,17 +56,22 @@ export const REORDER_PACKAGES: ReorderPackage[] = [
   { id: 5, qty: 50, price: 350 },
 ];
 
+// Product reorder split (must total 100%)
+// 25% products + 15% leadership + 10% rank + 15% network = 65% out
+// 35% stays in contract as liquidity pool
 export const REORDER_BONUS_RATES = {
-  network_level: 0.30,
-  leadership_pool: 0.15,
-  rank_pool: 0.10,
+  products:        0.25, // → PRODUCTS_POOL_ADDRESS
+  leadership_pool: 0.15, // → LEADERSHIP_POOL_ADDRESS
+  rank_pool:       0.10, // → RANK_POOL_ADDRESS
+  network_level:   0.15, // across 10 upline levels
+  // liquidity: 35% (implicit)
 };
 
-// 10 levels: 3+2+2+2+1+1+1+1+1+1 = 15% (for regular network bonus)
-export const NETWORK_LEVEL_DISTRIBUTION = [0.03, 0.02, 0.02, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01];
+// Upgrade/deposit network — 10% across 10 levels: 3+2+1+1+1+1+0.5+0.5+0.5+0.5 = 10%
+export const NETWORK_LEVEL_DISTRIBUTION = [0.03, 0.02, 0.01, 0.01, 0.01, 0.01, 0.005, 0.005, 0.005, 0.005];
 
-// Product reorder 30% across 10 levels: 6+4+4+4+2+2+2+2+2+2 = 30%
-export const REORDER_LEVEL_DISTRIBUTION = [0.06, 0.04, 0.04, 0.04, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02];
+// Reorder network — 15% across 10 levels: 5+3+2+1.5+1+1+0.6+0.3+0.3+0.3 = 15%
+export const REORDER_LEVEL_DISTRIBUTION = [0.05, 0.03, 0.02, 0.015, 0.01, 0.01, 0.006, 0.003, 0.003, 0.003];
 
 export function getPackageByLevel(level: number): Package | undefined {
   return PACKAGES.find(p => p.level === level);
