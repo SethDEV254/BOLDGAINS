@@ -44,7 +44,7 @@ export async function GET() {
     ]);
 
     const opPk = process.env.OPERATOR_PRIVATE_KEY;
-    const ownPk = process.env.OWNER_PRIVATE_KEY;
+    const ownPk = process.env.OWNER_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
     const operatorAddress = opPk ? new Wallet(opPk).address : '';
     const ownerAddress = ownPk ? new Wallet(ownPk).address : '';
 
@@ -79,12 +79,9 @@ export async function POST(req: NextRequest) {
   const { action, txId, to, amount } = body;
 
   const operatorPk = process.env.OPERATOR_PRIVATE_KEY;
-  const ownerPk = process.env.OWNER_PRIVATE_KEY || process.env.OPERATOR_PRIVATE_KEY;
+  const ownerPk = process.env.OWNER_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY || process.env.OPERATOR_PRIVATE_KEY;
   if (!operatorPk) return NextResponse.json({ error: 'OPERATOR_PRIVATE_KEY not set' }, { status: 500 });
-
-  const OWNER_ONLY = ['pause', 'unpause', 'collectFees', 'emergencyWithdraw'];
-  if (OWNER_ONLY.includes(action) && !process.env.OWNER_PRIVATE_KEY)
-    return NextResponse.json({ error: 'OWNER_PRIVATE_KEY not set — owner-only actions require the contract owner\'s private key' }, { status: 500 });
+  if (!ownerPk) return NextResponse.json({ error: 'No owner key set — add OWNER_PRIVATE_KEY or DEPLOYER_PRIVATE_KEY' }, { status: 500 });
 
   try {
     const { Wallet, Contract, parseEther, formatEther } = await import('ethers');
