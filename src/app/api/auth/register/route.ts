@@ -6,7 +6,6 @@ import {
 } from '@/lib/db';
 import { generateReferralCode } from '@/lib/auth';
 import { REGISTRATION_FEE_GROSS, BONUS_RATES, REGISTRATION_REFERRER_RATE } from '@/lib/packages';
-import { distributePayouts, PayoutItem } from '@/lib/payout';
 
 export async function POST(req: NextRequest) {
   try {
@@ -84,23 +83,32 @@ export async function POST(req: NextRequest) {
       reference: txHash || undefined,
     });
 
-    // 50% of net → direct referrer; 50% stays in contract
-    const referrerPayout: PayoutItem[] = [];
-    if (sponsor) {
-      referrerPayout.push({
-        userId: sponsor.id,
-        amount: verifiedNet * REGISTRATION_REFERRER_RATE,
-        type: 'referral_bonus',
-        description: `Registration referral bonus — ${name} registered`,
-        sourceUserId: userId,
-      });
-    }
-
-    // Fire-and-forget — batchPayout on operator wallet
-    if (referrerPayout.length) {
+    // 50% of net → direct referrer on-chain; 50% stays in contract
+    if (sponsor?.bsc_address && /^0x[0-9a-fA-F]{40}$/.test(sponsor.bsc_address) && txHash) {
+      const referralAmount = verifiedNet * REGISTRATION_REFERRER_RATE;
+      const ref = `reg-ref-${userId}`;
       (async () => {
-        await distributePayouts(referrerPayout);
-      })().catch(err => console.error('[register] referral payout failed:', err));
+        try {
+          const { JsonRpcProvider, Wallet, Contract, parseUnits } = await import('ethers');
+          const { BSC_RPC, CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
+          const pk = process.env.OPERATOR_PRIVATE_KEY;
+          if (!pk) throw new Error('OPERATOR_PRIVATE_KEY not set');
+          const provider = new JsonRpcProvider(BSC_RPC);
+          const signer = new Wallet(pk, provider);
+          const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+          const amountWei = parseUnits(referralAmount.toFixed(8), 18);
+          const tx = await contract.processWithdrawal(sponsor.bsc_address, amountWei, ref);
+          await tx.wait();
+          await createTransaction({
+            userId: sponsor.id, type: 'referral_bonus',
+            amount: referralAmount, fee: 0, netAmount: referralAmount,
+            description: `Registration referral bonus — ${name} registered`,
+            reference: tx.hash,
+          });
+        } catch (err) {
+          console.error('[register] referral on-chain payout failed:', err);
+        }
+      })();
     }
 
     return NextResponse.json({ success: true, pending: false });
