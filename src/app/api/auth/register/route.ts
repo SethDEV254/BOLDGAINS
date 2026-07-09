@@ -7,6 +7,7 @@ import {
 import { generateReferralCode } from '@/lib/auth';
 import { REGISTRATION_FEE, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
 import { distributePayouts, PayoutItem } from '@/lib/payout';
+import { sendToPool } from '@/lib/pool-payout';
 
 export async function POST(req: NextRequest) {
   try {
@@ -82,6 +83,12 @@ export async function POST(req: NextRequest) {
       description: 'Registration fee',
       reference: txHash || undefined,
     });
+
+    // Send net registration fee to dedicated registration wallet
+    if (txHash) {
+      sendToPool('registration', verifiedNet, `reg-${txHash}`)
+        .catch(err => console.error('[register] registration pool failed:', err));
+    }
 
     if (sponsor) {
       const payouts: PayoutItem[] = [];

@@ -2,9 +2,10 @@ import { JsonRpcProvider, Wallet, Contract, parseUnits } from 'ethers';
 import { BSC_RPC, CONTRACT_ADDRESS, CONTRACT_ABI } from './contract';
 
 const POOL_ADDRESSES = {
-  leadership: process.env.LEADERSHIP_POOL_ADDRESS!,
-  rank:       process.env.RANK_POOL_ADDRESS!,
-  products:   process.env.PRODUCTS_POOL_ADDRESS!,
+  leadership:   process.env.LEADERSHIP_POOL_ADDRESS!,
+  rank:         process.env.RANK_POOL_ADDRESS!,
+  products:     process.env.PRODUCTS_POOL_ADDRESS!,
+  registration: process.env.REGISTRATION_FEE_ADDRESS!,
 };
 
 function getSigner() {
