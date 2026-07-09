@@ -5,7 +5,7 @@ import {
   Settings, DollarSign, Percent, Shield, Copy, Check,
   ExternalLink, Info, Package, Wallet,
 } from 'lucide-react';
-import { PACKAGES, REGISTRATION_FEE, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { PACKAGES, REGISTRATION_FEE, REGISTRATION_FEE_GROSS, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
 
@@ -84,9 +84,10 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Platform Rates</p>
-            <InfoRow label="Registration Fee" value={`$${REGISTRATION_FEE} USD`} color="#f59e0b" />
-            <InfoRow label="Management Fee" value={`${(BONUS_RATES.management_fee_deposit * 100).toFixed(0)}%`} color="#f87171" />
-            <InfoRow label="Withdrawal Fee" value={`${(BONUS_RATES.management_fee_withdrawal * 100).toFixed(0)}%`} color="#f87171" />
+            <InfoRow label="Registration Fee (gross)" value={`$${REGISTRATION_FEE_GROSS} USD`} color="#f59e0b" />
+            <InfoRow label="Registration Base" value={`$${REGISTRATION_FEE} USD`} color="#9ca3af" />
+            <InfoRow label="Platform Fee (deposit)" value={`${(BONUS_RATES.management_fee_deposit * 100).toFixed(0)}%`} color="#f87171" />
+            <InfoRow label="Withdrawal Fee" value="None" color="#34d399" />
             <InfoRow label="Upgrade Bonus" value={`${(BONUS_RATES.upgrade_bonus * 100).toFixed(0)}%`} color="#34d399" />
             <InfoRow label="Leadership Pool" value={`${(BONUS_RATES.leadership_pool * 100).toFixed(0)}%`} color="#a78bfa" />
             <InfoRow label="Rank Pool" value={`${(BONUS_RATES.rank_pool * 100).toFixed(0)}%`} color="#fbbf24" />

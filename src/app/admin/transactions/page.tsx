@@ -104,7 +104,7 @@ export default function TransactionsPage() {
               <Clock className="w-5 h-5 text-amber-400" />
               Pending Withdrawals ({pendingWithdrawals.length})
             </h3>
-            <span className="text-xs text-gray-500">Use Contract page to process</span>
+            <span className="text-xs text-gray-500">Auto-processed on-chain · Reject to refund</span>
           </div>
           <div className="space-y-2">
             {pendingWithdrawals.map(t => {
@@ -124,16 +124,11 @@ export default function TransactionsPage() {
                     <p className="text-gray-600 text-xs">Net {t.net_amount.toFixed(4)} BNB</p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={() => handleWithdrawal(t.id, 'approve')} disabled={working === t.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap"
-                      style={{ background: 'rgba(16,185,129,0.15)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
-                      {working === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                      Approve
-                    </button>
                     <button onClick={() => handleWithdrawal(t.id, 'reject')} disabled={working === t.id}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
                       style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
-                      <XCircle className="w-3.5 h-3.5" /> Reject
+                      {working === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                      Reject &amp; Refund
                     </button>
                   </div>
                 </div>
@@ -204,18 +199,12 @@ export default function TransactionsPage() {
                     <td className="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">{new Date(t.created_at).toLocaleDateString()}</td>
                     <td className="py-3 px-3">
                       {t.type === 'withdrawal' && t.status === 'pending' && (
-                        <div className="flex gap-1.5">
-                          <button onClick={() => handleWithdrawal(t.id, 'approve')} disabled={working === t.id}
-                            className="p-1.5 rounded-lg transition-colors"
-                            style={{ background: 'rgba(16,185,129,0.12)', color: '#34d399' }}>
-                            <CheckCircle className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => handleWithdrawal(t.id, 'reject')} disabled={working === t.id}
-                            className="p-1.5 rounded-lg transition-colors"
-                            style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        <button onClick={() => handleWithdrawal(t.id, 'reject')} disabled={working === t.id}
+                          className="p-1.5 rounded-lg transition-colors"
+                          title="Reject & refund"
+                          style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
+                          {working === t.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                        </button>
                       )}
                     </td>
                   </tr>
