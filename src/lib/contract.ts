@@ -1,5 +1,17 @@
 export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
-export const BSC_RPC           = 'https://bsc-dataseed.binance.org/';
+
+const BSC_RPC_FALLBACKS = [
+  'https://bsc-dataseed1.binance.org/',
+  'https://bsc-dataseed2.binance.org/',
+  'https://bsc-dataseed3.binance.org/',
+  'https://bsc-dataseed1.defibit.io/',
+  'https://bsc-dataseed1.ninicoin.io/',
+];
+
+export const BSC_RPC = process.env.BSC_RPC_URL || 'https://bsc-dataseed.binance.org/';
+export const BSC_RPC_LIST = process.env.BSC_RPC_URL
+  ? [process.env.BSC_RPC_URL, ...BSC_RPC_FALLBACKS]
+  : ['https://bsc-dataseed.binance.org/', ...BSC_RPC_FALLBACKS];
 
 export const CONTRACT_ABI = [
   // User actions (payable — send BNB as msg.value; blocked when paused)
