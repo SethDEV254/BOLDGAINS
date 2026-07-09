@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import {
   getUserByEmail, getUserByBscAddress, createUser,
-  createTransaction, getTransactionByReference, getUserById,
+  createTransaction, getTransactionByReference,
 } from '@/lib/db';
 import { generateReferralCode } from '@/lib/auth';
-import { REGISTRATION_FEE_GROSS, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { REGISTRATION_FEE_GROSS, BONUS_RATES, REGISTRATION_REFERRER_RATE } from '@/lib/packages';
 import { distributePayouts, PayoutItem } from '@/lib/payout';
-import { sendToPool } from '@/lib/pool-payout';
 
 export async function POST(req: NextRequest) {
   try {
@@ -85,38 +84,23 @@ export async function POST(req: NextRequest) {
       reference: txHash || undefined,
     });
 
-    const networkPayouts: PayoutItem[] = [];
+    // 50% of net → direct referrer; 50% stays in contract
+    const referrerPayout: PayoutItem[] = [];
     if (sponsor) {
-      let currentSponsor = sponsor;
-      let level = 1;
-
-      while (currentSponsor && level <= NETWORK_LEVEL_DISTRIBUTION.length) {
-        const rate = NETWORK_LEVEL_DISTRIBUTION[level - 1] || 0;
-        if (rate > 0) {
-          networkPayouts.push({
-            userId: currentSponsor.id,
-            amount: verifiedGross * rate,
-            type: 'network_level',
-            description: `Level ${level} network bonus — ${name} registered`,
-            sourceUserId: userId,
-          });
-        }
-        if (!currentSponsor.sponsor_id) break;
-        const upline = await getUserById(currentSponsor.sponsor_id);
-        if (!upline) break;
-        currentSponsor = upline;
-        level++;
-      }
+      referrerPayout.push({
+        userId: sponsor.id,
+        amount: verifiedNet * REGISTRATION_REFERRER_RATE,
+        type: 'referral_bonus',
+        description: `Registration referral bonus — ${name} registered`,
+        sourceUserId: userId,
+      });
     }
 
-    // Fire-and-forget — sequential so pool TX and batchPayout never race on the same operator nonce
-    if (txHash || networkPayouts.length) {
-      const poolRef = txHash ? `reg-${txHash}` : null;
-      const net = verifiedNet;
+    // Fire-and-forget — batchPayout on operator wallet
+    if (referrerPayout.length) {
       (async () => {
-        if (poolRef) await sendToPool('registration', net, poolRef);
-        if (networkPayouts.length) await distributePayouts(networkPayouts);
-      })().catch(err => console.error('[register] payout failed:', err));
+        await distributePayouts(referrerPayout);
+      })().catch(err => console.error('[register] referral payout failed:', err));
     }
 
     return NextResponse.json({ success: true, pending: false });
