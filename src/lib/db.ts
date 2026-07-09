@@ -313,6 +313,16 @@ export async function approveWithdrawal(txId: number) {
   await sql`UPDATE transactions SET status = 'completed' WHERE id = ${txId}`;
 }
 
+export async function completeTransaction(txId: number, txHash: string) {
+  const sql = await getDb();
+  await sql`UPDATE transactions SET status = 'completed', reference = ${txHash} WHERE id = ${txId}`;
+}
+
+export async function failTransaction(txId: number) {
+  const sql = await getDb();
+  await sql`UPDATE transactions SET status = 'failed' WHERE id = ${txId}`;
+}
+
 export async function rejectWithdrawal(txId: number) {
   const sql = await getDb();
   const rows = await sql`SELECT * FROM transactions WHERE id = ${txId}`;

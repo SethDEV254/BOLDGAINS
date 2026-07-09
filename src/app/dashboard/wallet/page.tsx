@@ -85,7 +85,7 @@ export default function WalletPage() {
       });
       const d = await res.json();
       if (!res.ok) { setMsg({ type: 'error', text: d.error }); return; }
-      setMsg({ type: 'success', text: `Withdrawal of ${amt} BNB requested. Net ${d.net.toFixed(4)} BNB will be sent to your wallet after admin approval.` });
+      setMsg({ type: 'success', text: `Withdrawal of ${amt} BNB submitted. ${d.net.toFixed(4)} BNB is being sent to your wallet on-chain.` });
       setAmount('');
       loadData();
     } catch {
@@ -294,7 +294,7 @@ export default function WalletPage() {
               <p className="text-xs text-gray-600 text-center">
                 Minimum withdrawal: ${MIN_WITHDRAWAL_NET_USD} USD
                 {minWithdrawBnb !== null ? ` (~${minWithdrawBnb.toFixed(5)} BNB)` : ''}
-                {' · '}No fee · paid in BNB · admin approval required.
+                {' · '}No fee · processed instantly on-chain.
               </p>
             )}
           </div>

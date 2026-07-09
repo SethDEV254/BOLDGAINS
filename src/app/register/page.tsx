@@ -117,7 +117,7 @@ function RegisterForm() {
             className="rounded-full mx-auto mb-4"
             style={{ boxShadow: '0 0 40px rgba(255,140,0,0.3)', border: '2px solid rgba(255,140,0,0.25)' }} /></Link>
           <h1 className="text-3xl font-black gold-gradient">Join Bold Gains</h1>
-          <p className="text-gray-400 mt-2">Pay ${REGISTRATION_FEE} registration fee · Pending admin approval</p>
+          <p className="text-gray-400 mt-2">Pay ${REGISTRATION_FEE_GROSS} registration fee · Instant access after payment</p>
           <Link href="/" className="inline-flex items-center gap-1.5 mt-3 text-xs text-gray-500 hover:text-amber-500 transition-colors">
             ← Back to Home
           </Link>
@@ -127,11 +127,11 @@ function RegisterForm() {
           style={{ background: 'rgba(255,140,0,0.07)', border: '1px solid rgba(255,140,0,0.22)' }}>
           <div className="text-sm">
             <span className="text-gray-400">Registration Fee</span>
-            <span className="text-white font-black ml-3">${REGISTRATION_FEE} USD</span>
+            <span className="text-white font-black ml-3">${REGISTRATION_FEE_GROSS} USD</span>
           </div>
           <div className="text-xs text-right">
-            <p className="text-gray-500">10% fee · net ${REGISTRATION_FEE_GROSS.toFixed(2)} · paid in BNB</p>
-            <p className="text-amber-500/70">Activate package anytime after approval</p>
+            <p className="text-gray-500">10% fee · net ${REGISTRATION_FEE.toFixed(2)} · paid in BNB</p>
+            <p className="text-amber-500/70">Instant access after payment</p>
           </div>
         </div>
 
@@ -144,9 +144,9 @@ function RegisterForm() {
                 style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
                 <Clock className="w-8 h-8 text-amber-400" />
               </div>
-              <p className="text-xl font-black text-white mb-2">Registration Submitted!</p>
+              <p className="text-xl font-black text-white mb-2">Welcome to Bold Gains!</p>
               <p className="text-gray-400 text-sm mb-3 max-w-xs mx-auto">
-                Your account is pending admin approval. You'll be able to login once an admin activates your account.
+                Your account is active. You can login now and start earning.
               </p>
               {txHash && (
                 <a href={`https://bscscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer"
@@ -156,7 +156,7 @@ function RegisterForm() {
               )}
               <div className="mt-4 p-3 rounded-xl text-xs"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#666' }}>
-                Contact your referrer or admin to activate your account.
+                Activate a package to start earning commissions and bonuses.
               </div>
               <Link href="/login" className="btn-gold inline-flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm mt-6">
                 Go to Login

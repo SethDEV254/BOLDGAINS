@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
       sponsorId: sponsor?.id,
       packageLevel: 0,
       bscAddress: bscAddress || undefined,
+      status: 'active',
     });
 
     await createTransaction({
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
       })().catch(err => console.error('[register] payout failed:', err));
     }
 
-    return NextResponse.json({ success: true, pending: true });
+    return NextResponse.json({ success: true, pending: false });
   } catch (err) {
     console.error('[register]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
