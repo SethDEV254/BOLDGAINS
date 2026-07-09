@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { getUserById, updateUserPackage, createTransaction, getTransactionByReference } from '@/lib/db';
 import { PACKAGES, BONUS_RATES } from '@/lib/packages';
 import { distributePayouts } from '@/lib/payout';
+import { distributePoolSplit } from '@/lib/pool-payout';
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest) {
   });
 
   await updateUserPackage(session.userId, packageLevel);
+
+  // Send leadership and rank pool cuts directly to pool wallets
+  if (txHash) {
+    distributePoolSplit(
+      gross,
+      BONUS_RATES.leadership_pool,
+      BONUS_RATES.rank_pool,
+      txHash,
+    ).catch(err => console.error('[upgrade] pool split failed:', err));
+  }
 
   if (user.sponsor_id) {
     await distributePayouts([{

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { updateWalletBalance, createTransaction, getTransactionByReference } from '@/lib/db';
 import { BONUS_RATES } from '@/lib/packages';
+import { distributePoolSplit } from '@/lib/pool-payout';
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -53,6 +54,14 @@ export async function POST(req: NextRequest) {
         reference: txHash,
       });
       await updateWalletBalance(session.userId, net);
+
+      // Split leadership and rank pool cuts to pool wallets
+      distributePoolSplit(
+        gross,
+        BONUS_RATES.leadership_pool,
+        BONUS_RATES.rank_pool,
+        txHash,
+      ).catch(err => console.error('[deposit] pool split failed:', err));
 
       return NextResponse.json({ success: true, amount: gross, fee, net, onChain: true });
     } catch (err) {

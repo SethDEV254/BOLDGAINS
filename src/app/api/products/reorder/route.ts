@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getUserById, createTransaction, updateWalletBalance } from '@/lib/db';
-import { REORDER_PACKAGES, REORDER_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { REORDER_PACKAGES, REORDER_LEVEL_DISTRIBUTION, REORDER_BONUS_RATES } from '@/lib/packages';
 import { distributePayouts, PayoutItem } from '@/lib/payout';
+import { sendToPool } from '@/lib/pool-payout';
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -55,6 +56,15 @@ export async function POST(req: NextRequest) {
   }
 
   if (payouts.length > 0) await distributePayouts(payouts);
+
+  // Send leadership and rank pool cuts to pool wallets
+  const reorderRef = `reorder-${session.userId}-${Date.now()}`;
+  sendToPool('leadership', pkg.price * REORDER_BONUS_RATES.leadership_pool, `${reorderRef}-leadership`)
+    .catch(err => console.error('[reorder] leadership pool failed:', err));
+  sendToPool('rank', pkg.price * REORDER_BONUS_RATES.rank_pool, `${reorderRef}-rank`)
+    .catch(err => console.error('[reorder] rank pool failed:', err));
+  sendToPool('products', pkg.price * REORDER_BONUS_RATES.network_level, `${reorderRef}-products`)
+    .catch(err => console.error('[reorder] products pool failed:', err));
 
   return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price, levelsRewarded: payouts.length });
 }
