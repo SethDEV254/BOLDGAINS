@@ -5,7 +5,7 @@ import { Users, Loader2, Search, ChevronDown, Ban, CheckCircle, Wallet, Package,
 import { PACKAGES } from '@/lib/packages';
 
 type User = {
-  id: number; name: string; email: string; referral_code: string;
+  id: number; name: string; email: string;
   package_level: number; wallet_balance: number; total_earned: number;
   status: string; role: string; sponsor_name?: string; bsc_address?: string; created_at: string;
 };
@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
   const [working, setWorking] = useState(false);
   const [toast, setToast] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [regForm, setRegForm] = useState({ name: '', email: '', password: '', referralCode: '', packageLevel: 1, bscAddress: '' });
+  const [regForm, setRegForm] = useState({ name: '', email: '', password: '', sponsorWallet: '', packageLevel: 1, bscAddress: '' });
 
   function showToast(msg: string) {
     setToast(msg);
@@ -55,8 +55,8 @@ export default function AdminUsersPage() {
     });
     const d = await r.json();
     if (!r.ok) { showToast(`Error: ${d.error}`); setWorking(false); return; }
-    showToast(`Member "${regForm.name}" registered — Code: ${d.referralCode}`);
-    setRegForm({ name: '', email: '', password: '', referralCode: '', packageLevel: 1, bscAddress: '' });
+    showToast(`Member "${regForm.name}" registered successfully`);
+    setRegForm({ name: '', email: '', password: '', sponsorWallet: '', packageLevel: 1, bscAddress: '' });
     await load();
     setModal(null);
     setWorking(false);
@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
 
   const filtered = users.filter(u => {
     const s = search.toLowerCase();
-    const matchSearch = u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s) || u.referral_code.toLowerCase().includes(s);
+    const matchSearch = u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s) || (u.bsc_address || '').toLowerCase().includes(s);
     const matchPkg = filterPkg === 0 || u.package_level === filterPkg;
     const matchStatus = filterStatus === 'all' || u.status === filterStatus;
     return matchSearch && matchPkg && matchStatus;
@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               className="input-dark w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-              placeholder="Name, email or referral code..." />
+              placeholder="Name, email or BSC wallet..." />
           </div>
           <select value={filterPkg} onChange={e => setFilterPkg(parseInt(e.target.value))}
             className="input-dark px-4 py-2.5 rounded-xl text-sm cursor-pointer">
@@ -300,21 +300,19 @@ export default function AdminUsersPage() {
                     <input value={regForm.bscAddress} onChange={e => setRegForm(f => ({ ...f, bscAddress: e.target.value }))}
                       className="input-dark w-full px-4 py-3 rounded-xl text-sm font-mono" placeholder="0x..." />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-400 mb-1.5 block">Referral Code (optional)</label>
-                      <input value={regForm.referralCode} onChange={e => setRegForm(f => ({ ...f, referralCode: e.target.value }))}
-                        className="input-dark w-full px-4 py-3 rounded-xl text-sm font-mono tracking-wider" placeholder="XXXX0000" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-400 mb-1.5 block">Starting Package</label>
-                      <div className="relative">
-                        <select value={regForm.packageLevel} onChange={e => setRegForm(f => ({ ...f, packageLevel: parseInt(e.target.value) }))}
-                          className="input-dark w-full px-4 py-3 rounded-xl text-sm appearance-none cursor-pointer">
-                          {PACKAGES.map(p => <option key={p.level} value={p.level} style={{ background: '#0f0801' }}>{p.name}</option>)}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1.5 block">Sponsor Wallet (optional)</label>
+                    <input value={regForm.sponsorWallet} onChange={e => setRegForm(f => ({ ...f, sponsorWallet: e.target.value }))}
+                      className="input-dark w-full px-4 py-3 rounded-xl text-sm font-mono" placeholder="0x... sponsor BSC address" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1.5 block">Starting Package</label>
+                    <div className="relative">
+                      <select value={regForm.packageLevel} onChange={e => setRegForm(f => ({ ...f, packageLevel: parseInt(e.target.value) }))}
+                        className="input-dark w-full px-4 py-3 rounded-xl text-sm appearance-none cursor-pointer">
+                        {PACKAGES.map(p => <option key={p.level} value={p.level} style={{ background: '#0f0801' }}>{p.name}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
                   </div>
                   <div className="flex gap-3 pt-1">

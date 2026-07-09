@@ -11,77 +11,81 @@ let initialized = false;
 
 async function ensureInit() {
   if (initialized) return;
-  initialized = true;
-  const sql = _sql();
+  initialized = true; // block concurrent inits; reset below on failure
+  try {
+    const sql = _sql();
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      referral_code TEXT UNIQUE NOT NULL,
-      sponsor_id INTEGER,
-      package_level INTEGER DEFAULT 0,
-      wallet_balance DOUBLE PRECISION DEFAULT 0,
-      total_earned DOUBLE PRECISION DEFAULT 0,
-      bsc_address TEXT,
-      role TEXT DEFAULT 'member',
-      status TEXT DEFAULT 'active',
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS transactions (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      type TEXT NOT NULL,
-      amount DOUBLE PRECISION NOT NULL,
-      fee DOUBLE PRECISION DEFAULT 0,
-      net_amount DOUBLE PRECISION NOT NULL,
-      description TEXT,
-      reference TEXT,
-      status TEXT DEFAULT 'completed',
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS earnings (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      type TEXT NOT NULL,
-      amount DOUBLE PRECISION NOT NULL,
-      source_user_id INTEGER,
-      description TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `;
-
-  await sql`CREATE INDEX IF NOT EXISTS idx_users_referral ON users(referral_code)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_users_sponsor ON users(sponsor_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings(user_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_transactions_ref ON transactions(reference)`;
-
-  // Migrations — safe to run on every cold start
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`;
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS bsc_address TEXT`;
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member'`;
-  // Ensure all existing rows without an explicit status get 'active'
-  await sql`UPDATE users SET status = 'active' WHERE status IS NULL`;
-
-  const admins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
-  if (admins.length === 0) {
-    const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD;
-    if (!adminPassword) throw new Error('ADMIN_DEFAULT_PASSWORD env var is not set');
-    const hash = await bcrypt.hash(adminPassword, 10);
     await sql`
-      INSERT INTO users (name, email, password_hash, referral_code, role, package_level, wallet_balance)
-      VALUES ('Admin', 'admin@boldgains.com', ${hash}, 'ADMIN001', 'admin', 12, 0)
-      ON CONFLICT DO NOTHING
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        referral_code TEXT UNIQUE NOT NULL,
+        sponsor_id INTEGER,
+        package_level INTEGER DEFAULT 0,
+        wallet_balance DOUBLE PRECISION DEFAULT 0,
+        total_earned DOUBLE PRECISION DEFAULT 0,
+        bsc_address TEXT,
+        role TEXT DEFAULT 'member',
+        status TEXT DEFAULT 'active',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
     `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        amount DOUBLE PRECISION NOT NULL,
+        fee DOUBLE PRECISION DEFAULT 0,
+        net_amount DOUBLE PRECISION NOT NULL,
+        description TEXT,
+        reference TEXT,
+        status TEXT DEFAULT 'completed',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS earnings (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        amount DOUBLE PRECISION NOT NULL,
+        source_user_id INTEGER,
+        description TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_users_referral ON users(referral_code)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_users_sponsor ON users(sponsor_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings(user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_transactions_ref ON transactions(reference)`;
+
+    // Migrations — safe to run on every cold start
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS bsc_address TEXT`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member'`;
+    await sql`UPDATE users SET status = 'active' WHERE status IS NULL`;
+
+    const admins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
+    if (admins.length === 0) {
+      const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+      if (!adminPassword) throw new Error('ADMIN_DEFAULT_PASSWORD env var is not set');
+      const hash = await bcrypt.hash(adminPassword, 10);
+      await sql`
+        INSERT INTO users (name, email, password_hash, referral_code, role, package_level, wallet_balance)
+        VALUES ('Admin', 'admin@boldgains.com', ${hash}, 'ADMIN001', 'admin', 12, 0)
+        ON CONFLICT DO NOTHING
+      `;
+    }
+  } catch (err) {
+    initialized = false; // allow retry on next request
+    throw err;
   }
 }
 

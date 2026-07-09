@@ -55,13 +55,12 @@ export async function POST(req: NextRequest) {
       });
       await updateWalletBalance(session.userId, net);
 
-      // Split leadership and rank pool cuts to pool wallets
-      distributePoolSplit(
-        gross,
-        BONUS_RATES.leadership_pool,
-        BONUS_RATES.rank_pool,
-        txHash,
-      ).catch(err => console.error('[deposit] pool split failed:', err));
+      // Sequential IIFE — pool sends share the operator wallet; parallel calls cause nonce conflicts
+      const poolRef = txHash;
+      const poolGross = gross;
+      (async () => {
+        await distributePoolSplit(poolGross, BONUS_RATES.leadership_pool, BONUS_RATES.rank_pool, poolRef);
+      })().catch(err => console.error('[deposit] pool split failed:', err));
 
       return NextResponse.json({ success: true, amount: gross, fee, net, onChain: true });
     } catch (err) {

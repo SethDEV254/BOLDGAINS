@@ -25,7 +25,7 @@ export async function GET() {
   return NextResponse.json({
     user: {
       id: user.id, name: user.name, email: user.email,
-      referralCode: user.referral_code, bscAddress: user.bsc_address,
+      bscAddress: user.bsc_address,
       packageLevel: user.package_level,
       walletBalance: user.wallet_balance, totalEarned: user.total_earned,
       role: user.role, createdAt: user.created_at,

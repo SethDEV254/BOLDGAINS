@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Copy, Check, Users, TrendingUp, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Copy, Check, Users, TrendingUp, Loader2, ChevronDown, ChevronRight, Link2 } from 'lucide-react';
 import { PACKAGES } from '@/lib/packages';
 
 function NetworkNode({ node, depth = 0 }: { node: any; depth?: number }) {
@@ -24,7 +24,7 @@ function NetworkNode({ node, depth = 0 }: { node: any; depth?: number }) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{node.name}</p>
           <p className="text-xs" style={{ color: pkg?.color || '#6b7280' }}>
-            {pkg?.name || 'No Package'} · {node.referral_code}
+            {pkg?.name || 'No Package'}{node.bsc_address ? ` · ${node.bsc_address.slice(0, 6)}…${node.bsc_address.slice(-4)}` : ''}
           </p>
         </div>
         <div className="text-right flex-shrink-0">
@@ -54,10 +54,16 @@ export default function NetworkPage() {
     fetch('/api/network').then(r => r.json()).then(setData).finally(() => setLoading(false));
   }, []);
 
+  const refLink = data?.bscAddress
+    ? `${typeof window !== 'undefined' ? window.location.origin : 'https://boldgains.net'}/register?ref=${data.bscAddress}`
+    : null;
+
   function copy() {
-    navigator.clipboard.writeText(data.referralCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (refLink) {
+      navigator.clipboard.writeText(refLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   }
 
   if (loading) return (
@@ -96,20 +102,30 @@ export default function NetworkPage() {
 
       {/* Referral link */}
       <div className="glass rounded-2xl p-6 gold-border-glow">
-        <h3 className="text-white font-bold mb-4">Your Referral Code</h3>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 flex items-center gap-3 glass px-4 py-3 rounded-xl border border-amber-900/30">
-            <span className="text-gray-400 text-sm">Code:</span>
-            <span className="font-mono font-black text-amber-400 text-lg tracking-widest">{data.referralCode}</span>
+        <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+          <Link2 className="w-4 h-4 text-amber-400" /> Your Referral Link
+        </h3>
+        {refLink ? (
+          <>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 glass px-4 py-3 rounded-xl border border-amber-900/30 min-w-0">
+                <p className="font-mono text-amber-400 text-sm truncate">{refLink}</p>
+              </div>
+              <button onClick={copy}
+                className="btn-gold flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm flex-shrink-0">
+                {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Link</>}
+              </button>
+            </div>
+            <p className="text-gray-500 text-xs mt-3">
+              Share this link — anyone who registers through it becomes your direct referral
+            </p>
+          </>
+        ) : (
+          <div className="px-4 py-3 rounded-xl text-sm text-gray-500"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            Connect a BSC wallet to generate your referral link
           </div>
-          <button onClick={copy}
-            className="btn-gold flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm">
-            {copied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Code</>}
-          </button>
-        </div>
-        <p className="text-gray-500 text-xs mt-3">
-          Share this code to earn network level bonuses across 10 levels
-        </p>
+        )}
       </div>
 
       {/* Network Tree */}
@@ -119,7 +135,7 @@ export default function NetworkPage() {
           <div className="text-center py-12">
             <Users className="w-12 h-12 text-gray-700 mx-auto mb-3" />
             <p className="text-gray-500">No referrals yet</p>
-            <p className="text-gray-600 text-sm mt-1">Share your referral code to start building your network</p>
+            <p className="text-gray-600 text-sm mt-1">Share your referral link to start building your network</p>
           </div>
         ) : (
           <div className="space-y-2">

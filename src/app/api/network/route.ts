@@ -25,5 +25,5 @@ export async function GET() {
 
   const tree = await buildTree(session.userId);
 
-  return NextResponse.json({ stats, tree, referralCode: user.referral_code });
+  return NextResponse.json({ stats, tree, bscAddress: user.bsc_address });
 }

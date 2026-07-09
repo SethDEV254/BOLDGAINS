@@ -20,7 +20,7 @@ export async function sendToPool(
   amountBnb: number,
   ref: string,
 ): Promise<string | null> {
-  if (amountBnb <= 0) return null;
+  if (!amountBnb || isNaN(amountBnb) || amountBnb <= 0) return null;
 
   const address = POOL_ADDRESSES[poolName];
   if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
