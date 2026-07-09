@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getUserById, createTransaction, updateWalletBalance } from '@/lib/db';
-import { REORDER_PACKAGES, REORDER_BONUS_RATES } from '@/lib/packages';
-import { distributePayouts } from '@/lib/payout';
+import { REORDER_PACKAGES, REORDER_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { distributePayouts, PayoutItem } from '@/lib/payout';
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -33,16 +33,28 @@ export async function POST(req: NextRequest) {
     description: `BoldGlow™ Reorder — ${pkg.qty} unit${pkg.qty > 1 ? 's' : ''}`,
   });
 
-  if (user.sponsor_id) {
-    const sponsorBonus = pkg.price * REORDER_BONUS_RATES.products;
-    await distributePayouts([{
-      userId: user.sponsor_id,
-      amount: sponsorBonus,
+  // Walk up to 10 upline levels and pay each their share of the 30%
+  const payouts: PayoutItem[] = [];
+  let currentId: number | null = user.sponsor_id ?? null;
+
+  for (let level = 0; level < REORDER_LEVEL_DISTRIBUTION.length; level++) {
+    if (!currentId) break;
+    const upline = await getUserById(currentId);
+    if (!upline) break;
+
+    const rate = REORDER_LEVEL_DISTRIBUTION[level];
+    payouts.push({
+      userId: upline.id,
+      amount: pkg.price * rate,
       type: 'product_reorder',
-      description: `Product Reorder Bonus — ${user.name} (${pkg.qty} units)`,
+      description: `Product Reorder Bonus L${level + 1} — ${user.name} (${pkg.qty} units)`,
       sourceUserId: session.userId,
-    }]);
+    });
+
+    currentId = upline.sponsor_id ?? null;
   }
 
-  return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price });
+  if (payouts.length > 0) await distributePayouts(payouts);
+
+  return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price, levelsRewarded: payouts.length });
 }

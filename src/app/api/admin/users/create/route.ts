@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   if (!session || session.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { name, email, password, referralCode, packageLevel } = await req.json();
+  const { name, email, password, referralCode, packageLevel, bscAddress } = await req.json();
 
   if (!name || !email || !password)
     return NextResponse.json({ error: 'Name, email and password are required' }, { status: 400 });
@@ -35,6 +35,8 @@ export async function POST(req: NextRequest) {
     referralCode: newReferralCode,
     sponsorId,
     packageLevel: packageLevel || 0,
+    bscAddress: bscAddress || undefined,
+    status: 'active',
   });
 
   return NextResponse.json({ success: true, userId, referralCode: newReferralCode });

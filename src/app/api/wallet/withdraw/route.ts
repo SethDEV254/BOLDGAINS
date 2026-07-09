@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getUserById, updateWalletBalance, createTransaction } from '@/lib/db';
-import { BONUS_RATES } from '@/lib/packages';
+import { BONUS_RATES, MIN_WITHDRAWAL_NET_USD } from '@/lib/packages';
+import { getBnbPrice } from '@/lib/bnb-price';
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -20,6 +21,13 @@ export async function POST(req: NextRequest) {
 
   const fee = amount * BONUS_RATES.management_fee_withdrawal;
   const net = amount - fee;
+
+  const bnbPrice = await getBnbPrice();
+  const netUsd = net * bnbPrice;
+  if (netUsd < MIN_WITHDRAWAL_NET_USD)
+    return NextResponse.json({
+      error: `Minimum withdrawal net is $${MIN_WITHDRAWAL_NET_USD} USD. Your net would be $${netUsd.toFixed(2)} USD.`,
+    }, { status: 400 });
 
   await updateWalletBalance(session.userId, -amount);
 

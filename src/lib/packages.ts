@@ -24,7 +24,10 @@ export const PACKAGES: Package[] = [
 ];
 
 // Fixed one-time fee paid at registration (no package assigned)
-export const REGISTRATION_FEE = 10; // $10 USD
+export const REGISTRATION_FEE = 10; // $10 USD paid in BNB at live rate
+
+// Minimum withdrawal net amount in USD
+export const MIN_WITHDRAWAL_NET_USD = 10;
 
 export const BONUS_RATES = {
   management_fee_deposit: 0.10,
@@ -50,14 +53,16 @@ export const REORDER_PACKAGES: ReorderPackage[] = [
 ];
 
 export const REORDER_BONUS_RATES = {
-  products: 0.45,
   network_level: 0.30,
   leadership_pool: 0.15,
   rank_pool: 0.10,
 };
 
-// 10 levels: 3+2+2+2+1+1+1+1+1+1 = 15%
+// 10 levels: 3+2+2+2+1+1+1+1+1+1 = 15% (for regular network bonus)
 export const NETWORK_LEVEL_DISTRIBUTION = [0.03, 0.02, 0.02, 0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01];
+
+// Product reorder 30% across 10 levels: 6+4+4+4+2+2+2+2+2+2 = 30%
+export const REORDER_LEVEL_DISTRIBUTION = [0.06, 0.04, 0.04, 0.04, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02];
 
 export function getPackageByLevel(level: number): Package | undefined {
   return PACKAGES.find(p => p.level === level);

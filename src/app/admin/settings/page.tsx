@@ -150,12 +150,11 @@ export default function SettingsPage() {
         </h3>
         <div className="space-y-3">
           <CopyField label="Admin Login Email" value="admin@boldgains.com" />
-          <CopyField label="Admin Password" value="Wealth@2026" />
         </div>
         <div className="mt-4 p-3 rounded-xl flex items-start gap-2"
           style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
           <Info className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-red-400">Change the admin password immediately via the database if this panel is publicly accessible.</p>
+          <p className="text-xs text-red-400">Admin password is set via the <code>ADMIN_DEFAULT_PASSWORD</code> environment variable. Never display or log credentials here.</p>
         </div>
       </div>
 

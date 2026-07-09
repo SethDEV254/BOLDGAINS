@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppKit } from '@reown/appkit/react';
-import { useAccount, useDisconnect, useBalance, useWalletClient, useSwitchChain, useConnect } from 'wagmi';
+import { useAccount, useDisconnect, useBalance, useWalletClient, useSwitchChain } from 'wagmi';
 import { BrowserProvider, JsonRpcSigner, Contract, parseEther, formatUnits } from 'ethers';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '@/lib/contract';
 
@@ -20,7 +20,6 @@ export function useWallet() {
   const { data: balance } = useBalance({ address, chainId: BSC_CHAIN_ID });
   const { data: walletClient } = useWalletClient({ chainId: BSC_CHAIN_ID });
   const { switchChainAsync } = useSwitchChain();
-  const { connect, connectors } = useConnect();
 
   const bnbBalance = balance
     ? parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(4)
@@ -28,23 +27,7 @@ export function useWallet() {
 
   const isWrongChain = isConnected && !!chain && chain.id !== BSC_CHAIN_ID;
 
-  // On mobile MetaMask browser, window.ethereum is injected — connect directly
-  // without showing the WalletConnect modal (faster, no network round-trips).
-  // On regular mobile browsers, fall back to the AppKit modal.
-  async function openWallet() {
-    if (
-      typeof window !== 'undefined' &&
-      (window as any).ethereum &&
-      !isConnected
-    ) {
-      const injected = connectors.find(
-        c => c.type === 'injected' || c.id === 'injected' || c.id === 'metaMaskSDK',
-      );
-      if (injected) {
-        connect({ connector: injected, chainId: BSC_CHAIN_ID });
-        return;
-      }
-    }
+  function openWallet() {
     open();
   }
 

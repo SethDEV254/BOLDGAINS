@@ -7,7 +7,7 @@ import { PACKAGES } from '@/lib/packages';
 type User = {
   id: number; name: string; email: string; referral_code: string;
   package_level: number; wallet_balance: number; total_earned: number;
-  status: string; role: string; sponsor_name?: string; created_at: string;
+  status: string; role: string; sponsor_name?: string; bsc_address?: string; created_at: string;
 };
 
 type Modal =
@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
   const [working, setWorking] = useState(false);
   const [toast, setToast] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [regForm, setRegForm] = useState({ name: '', email: '', password: '', referralCode: '', packageLevel: 1 });
+  const [regForm, setRegForm] = useState({ name: '', email: '', password: '', referralCode: '', packageLevel: 1, bscAddress: '' });
 
   function showToast(msg: string) {
     setToast(msg);
@@ -56,7 +56,7 @@ export default function AdminUsersPage() {
     const d = await r.json();
     if (!r.ok) { showToast(`Error: ${d.error}`); setWorking(false); return; }
     showToast(`Member "${regForm.name}" registered — Code: ${d.referralCode}`);
-    setRegForm({ name: '', email: '', password: '', referralCode: '', packageLevel: 1 });
+    setRegForm({ name: '', email: '', password: '', referralCode: '', packageLevel: 1, bscAddress: '' });
     await load();
     setModal(null);
     setWorking(false);
@@ -115,10 +115,11 @@ export default function AdminUsersPage() {
         {[
           { label: 'Total Members', value: users.filter(u => u.role !== 'admin').length, color: '#f59e0b' },
           { label: 'Active', value: users.filter(u => u.status === 'active' && u.role !== 'admin').length, color: '#10b981' },
+          { label: 'Pending Approval', value: users.filter(u => u.status === 'pending').length, color: '#f59e0b' },
           { label: 'Suspended', value: users.filter(u => u.status === 'suspended').length, color: '#ef4444' },
-          { label: 'No Package', value: users.filter(u => u.package_level === 0 && u.role !== 'admin').length, color: '#6b7280' },
         ].map((s, i) => (
-          <div key={i} className="stat-card rounded-2xl p-4">
+          <div key={i} className="stat-card rounded-2xl p-4 cursor-pointer"
+            onClick={() => i === 2 ? setFilterStatus('pending') : i === 1 ? setFilterStatus('active') : i === 3 ? setFilterStatus('suspended') : setFilterStatus('all')}>
             <p className="text-gray-500 text-xs mb-1">{s.label}</p>
             <p className="text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
           </div>
@@ -144,6 +145,7 @@ export default function AdminUsersPage() {
             className="input-dark px-4 py-2.5 rounded-xl text-sm cursor-pointer">
             <option value="all" style={{ background: '#0f0801' }}>All Status</option>
             <option value="active" style={{ background: '#0f0801' }}>Active</option>
+            <option value="pending" style={{ background: '#0f0801' }}>Pending</option>
             <option value="suspended" style={{ background: '#0f0801' }}>Suspended</option>
           </select>
         </div>
@@ -152,7 +154,7 @@ export default function AdminUsersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['Member', 'Package', 'Balance', 'Earned', 'Status', 'Sponsor', 'Joined', 'Actions'].map(h => (
+                {['Member', 'Package', 'Balance', 'Earned', 'Status', 'Sponsor', 'BSC Wallet', 'Joined', 'Actions'].map(h => (
                   <th key={h} className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -161,9 +163,10 @@ export default function AdminUsersPage() {
               {filtered.map(u => {
                 const pkg = PACKAGES.find(p => p.level === u.package_level);
                 const isSuspended = u.status === 'suspended';
+                const isPending = u.status === 'pending';
                 return (
                   <tr key={u.id} className="border-t border-white/[0.03] transition-colors"
-                    style={{ background: isSuspended ? 'rgba(239,68,68,0.03)' : undefined }}>
+                    style={{ background: isSuspended ? 'rgba(239,68,68,0.03)' : isPending ? 'rgba(245,158,11,0.03)' : undefined }}>
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -185,21 +188,39 @@ export default function AdminUsersPage() {
                     <td className="py-3 px-3 text-amber-400 font-semibold">${(u.wallet_balance || 0).toFixed(2)}</td>
                     <td className="py-3 px-3 text-emerald-400">${(u.total_earned || 0).toFixed(2)}</td>
                     <td className="py-3 px-3">
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${isSuspended ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'}`}>
-                        {isSuspended ? 'Suspended' : 'Active'}
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                        isSuspended ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                        : isPending ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                        : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        {isSuspended ? 'Suspended' : isPending ? 'Pending' : 'Active'}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-gray-400 text-xs">{u.sponsor_name || '—'}</td>
+                    <td className="py-3 px-3 text-xs font-mono">
+                      {u.bsc_address
+                        ? <span className="text-amber-400" title={u.bsc_address}>{u.bsc_address.slice(0, 6)}…{u.bsc_address.slice(-4)}</span>
+                        : <span className="text-gray-700">—</span>}
+                    </td>
                     <td className="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="py-3 px-3">
                       {u.role !== 'admin' && (
                         <div className="flex items-center gap-1.5">
-                          <button title={isSuspended ? 'Activate' : 'Suspend'}
-                            onClick={() => patchUser(u.id, { action: isSuspended ? 'activate' : 'suspend' }, isSuspended ? `${u.name} activated` : `${u.name} suspended`)}
-                            className="p-1.5 rounded-lg transition-colors hover:scale-110"
-                            style={{ background: isSuspended ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', color: isSuspended ? '#34d399' : '#f87171' }}>
-                            {isSuspended ? <CheckCircle className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
-                          </button>
+                          {isPending ? (
+                            <button title="Approve — activate this account"
+                              onClick={() => patchUser(u.id, { action: 'activate' }, `${u.name} approved`)}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all hover:scale-105"
+                              style={{ background: 'rgba(16,185,129,0.18)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
+                              <CheckCircle className="w-3.5 h-3.5" /> Approve
+                            </button>
+                          ) : (
+                            <button title={isSuspended ? 'Activate' : 'Suspend'}
+                              onClick={() => patchUser(u.id, { action: isSuspended ? 'activate' : 'suspend' }, isSuspended ? `${u.name} activated` : `${u.name} suspended`)}
+                              className="p-1.5 rounded-lg transition-colors hover:scale-110"
+                              style={{ background: isSuspended ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', color: isSuspended ? '#34d399' : '#f87171' }}>
+                              {isSuspended ? <CheckCircle className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                            </button>
+                          )}
                           <button title="Adjust Balance" onClick={() => { setModal({ type: 'balance', user: u }); setBalanceAmt(''); setBalanceReason(''); }}
                             className="p-1.5 rounded-lg transition-colors hover:scale-110"
                             style={{ background: 'rgba(245,158,11,0.12)', color: '#fbbf24' }}>
@@ -273,6 +294,11 @@ export default function AdminUsersPage() {
                         {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1.5 block">BSC Wallet Address (optional)</label>
+                    <input value={regForm.bscAddress} onChange={e => setRegForm(f => ({ ...f, bscAddress: e.target.value }))}
+                      className="input-dark w-full px-4 py-3 rounded-xl text-sm font-mono" placeholder="0x..." />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>

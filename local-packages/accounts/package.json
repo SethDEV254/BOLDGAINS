@@ -1,0 +1,6 @@
+{
+  "name": "accounts",
+  "version": "1.0.0",
+  "description": "Stub for wagmi's optional accounts dependency",
+  "main": "index.js"
+}

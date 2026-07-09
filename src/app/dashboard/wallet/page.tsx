@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Wallet, ArrowDownLeft, ArrowUpRight, Loader2, AlertCircle, Check, Link2, Link2Off, ExternalLink } from 'lucide-react';
-import { BONUS_RATES } from '@/lib/packages';
+import { BONUS_RATES, MIN_WITHDRAWAL_NET_USD } from '@/lib/packages';
+import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
 import { useWallet } from '@/hooks/use-wallet';
 
 function shortAddr(addr: string) {
@@ -20,6 +21,7 @@ export default function WalletPage() {
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string; hash?: string } | null>(null);
 
   const wallet = useWallet();
+  const [bnbPrice, setBnbPrice] = useState<number | null>(null);
 
   async function loadData() {
     const d = await fetch('/api/wallet/transactions').then(r => r.json());
@@ -31,6 +33,7 @@ export default function WalletPage() {
       setUserId(d.user?.id?.toString() || '');
     });
     loadData().finally(() => setLoading(false));
+    getBnbPrice().then(p => setBnbPrice(p));
   }, []);
 
   useEffect(() => {
@@ -40,6 +43,8 @@ export default function WalletPage() {
   const amt = parseFloat(amount) || 0;
   const fee = amt > 0 ? amt * (tab === 'deposit' ? BONUS_RATES.management_fee_deposit : BONUS_RATES.management_fee_withdrawal) : 0;
   const net = amt - fee;
+  const minWithdrawBnb = bnbPrice ? usdToBnb(MIN_WITHDRAWAL_NET_USD, bnbPrice) : null;
+  const netBelowMin = tab === 'withdraw' && amt > 0 && minWithdrawBnb !== null && net < minWithdrawBnb;
 
   async function handleOnChainDeposit() {
     if (!wallet.address) { wallet.open(); return; }
@@ -236,7 +241,8 @@ export default function WalletPage() {
             )}
 
             {amt > 0 && (
-              <div className="p-4 rounded-xl space-y-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="p-4 rounded-xl space-y-2"
+                style={{ background: netBelowMin ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.03)', border: netBelowMin ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Amount</span>
                   <span className="text-white">{amt.toFixed(4)} BNB</span>
@@ -247,8 +253,16 @@ export default function WalletPage() {
                 </div>
                 <div className="border-t border-white/10 pt-2 flex justify-between text-sm font-bold">
                   <span className="text-gray-300">Net {tab === 'deposit' ? 'Credited' : 'Received'}</span>
-                  <span className="text-emerald-400">{net.toFixed(4)} BNB</span>
+                  <span className={netBelowMin ? 'text-red-400' : 'text-emerald-400'}>{net.toFixed(4)} BNB</span>
                 </div>
+                {netBelowMin && minWithdrawBnb !== null && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                    <p className="text-xs text-red-400">
+                      Minimum net is ${MIN_WITHDRAWAL_NET_USD} USD (~{minWithdrawBnb.toFixed(5)} BNB). Increase your amount.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -266,7 +280,7 @@ export default function WalletPage() {
             ) : (
               <button
                 onClick={handleWithdraw}
-                disabled={processing || amt <= 0}
+                disabled={processing || amt <= 0 || netBelowMin}
                 className="btn-gold w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2">
                 {processing
                   ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting…</>
@@ -276,7 +290,9 @@ export default function WalletPage() {
 
             {tab === 'withdraw' && (
               <p className="text-xs text-gray-600 text-center">
-                BNB is sent to your wallet after admin approves on-chain.
+                Minimum net: ${MIN_WITHDRAWAL_NET_USD} USD
+                {minWithdrawBnb !== null ? ` (~${minWithdrawBnb.toFixed(5)} BNB)` : ''}
+                {' · '}10% fee · paid in BNB · admin approval required.
               </p>
             )}
           </div>

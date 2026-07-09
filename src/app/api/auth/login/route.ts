@@ -15,7 +15,9 @@ export async function POST(req: NextRequest) {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
-    if (user.status !== 'active') return NextResponse.json({ error: 'Account suspended' }, { status: 403 });
+    const status = user.status ?? 'active'; // treat legacy rows without status column as active
+    if (status === 'pending') return NextResponse.json({ error: 'Account pending admin approval. Contact your admin to activate your account.' }, { status: 403 });
+    if (status === 'suspended') return NextResponse.json({ error: 'Account suspended. Contact support.' }, { status: 403 });
 
     const token = await createSession({
       userId: user.id, email: user.email, role: user.role, name: user.name,

@@ -65,9 +65,18 @@ async function ensureInit() {
   await sql`CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_transactions_ref ON transactions(reference)`;
 
+  // Migrations — safe to run on every cold start
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS bsc_address TEXT`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member'`;
+  // Ensure all existing rows without an explicit status get 'active'
+  await sql`UPDATE users SET status = 'active' WHERE status IS NULL`;
+
   const admins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
   if (admins.length === 0) {
-    const hash = await bcrypt.hash('Wealth@2026', 10);
+    const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD;
+    if (!adminPassword) throw new Error('ADMIN_DEFAULT_PASSWORD env var is not set');
+    const hash = await bcrypt.hash(adminPassword, 10);
     await sql`
       INSERT INTO users (name, email, password_hash, referral_code, role, package_level, wallet_balance)
       VALUES ('Admin', 'admin@boldgains.com', ${hash}, 'ADMIN001', 'admin', 12, 0)
@@ -108,12 +117,14 @@ export async function getUserByBscAddress(address: string) {
 export async function createUser(data: {
   name: string; email: string; passwordHash: string;
   referralCode: string; sponsorId?: number; packageLevel: number; bscAddress?: string;
+  status?: string;
 }) {
   const sql = await getDb();
+  const status = data.status ?? 'pending';
   const rows = await sql`
-    INSERT INTO users (name, email, password_hash, referral_code, sponsor_id, package_level, bsc_address)
+    INSERT INTO users (name, email, password_hash, referral_code, sponsor_id, package_level, bsc_address, status)
     VALUES (${data.name}, ${data.email}, ${data.passwordHash}, ${data.referralCode},
-            ${data.sponsorId ?? null}, ${data.packageLevel}, ${data.bscAddress ?? null})
+            ${data.sponsorId ?? null}, ${data.packageLevel}, ${data.bscAddress ?? null}, ${status})
     RETURNING id
   `;
   return rows[0].id as number;

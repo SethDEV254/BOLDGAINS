@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PACKAGES } from '@/lib/packages';
 import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
-import { Check, ChevronRight, Loader2, Lock, Star, Link2, ExternalLink } from 'lucide-react';
+import { Check, ChevronRight, Loader2, Lock, Star, Link2, ExternalLink, AlertTriangle, X } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
 
 export default function PackagesPage() {
@@ -13,7 +13,13 @@ export default function PackagesPage() {
   const [working, setWorking] = useState<number | null>(null);
   const [success, setSuccess] = useState<{ text: string; hash?: string } | null>(null);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
   const [bnbPrice, setBnbPrice] = useState<number | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 5000);
+  }
   const wallet = useWallet();
 
   useEffect(() => {
@@ -25,18 +31,30 @@ export default function PackagesPage() {
   }, []);
 
   async function handleBuy(level: number, priceUsd: number) {
-    setWorking(level);
     setError('');
     setSuccess(null);
+
+    if (!wallet.address) {
+      wallet.open();
+      return;
+    }
+
+    const price = bnbPrice || await getBnbPrice();
+    const bnbAmount = usdToBnb(priceUsd, price);
+    const walletBnb = parseFloat(wallet.bnbBalance);
+
+    if (walletBnb < bnbAmount) {
+      showToast(`Insufficient funds in connected wallet. You have ${wallet.bnbBalance} BNB but need ${bnbAmount.toFixed(6)} BNB (~$${priceUsd} USD).`);
+      return;
+    }
+
+    setWorking(level);
     const pkg = PACKAGES.find(p => p.level === level)!;
 
     try {
       let txHash: string | undefined;
 
       if (wallet.isReady) {
-        if (!wallet.address) await wallet.open();
-        const price = bnbPrice || await getBnbPrice();
-        const bnbAmount = usdToBnb(priceUsd, price);
         txHash = await wallet.payUpgradeFee(bnbAmount, userId, level);
       }
 
@@ -107,6 +125,35 @@ export default function PackagesPage() {
         </div>
       </div>
 
+      {/* Fixed toast for insufficient funds */}
+      {toast && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none px-4">
+          <div className="pointer-events-auto max-w-sm w-full rounded-2xl p-5 shadow-2xl"
+            style={{
+              background: 'rgba(10,4,0,0.97)',
+              border: '1px solid rgba(239,68,68,0.5)',
+              boxShadow: '0 0 60px rgba(239,68,68,0.2), 0 25px 50px rgba(0,0,0,0.8)',
+            }}>
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-black text-sm mb-1">Insufficient Funds</p>
+                <p className="text-red-300 text-xs leading-relaxed">{toast}</p>
+              </div>
+              <button onClick={() => setToast('')} className="text-gray-600 hover:text-white transition-colors flex-shrink-0 mt-0.5">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="mt-4 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(239,68,68,0.15)' }}>
+              <div className="h-1 rounded-full bg-red-500" style={{ animation: 'shrink 5s linear forwards' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {success && (
         <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-start gap-3">
           <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -160,6 +207,7 @@ export default function PackagesPage() {
 
           const btnLabel = working === pkg.level
             ? 'Processing…'
+            : !wallet.address ? 'Connect Wallet'
             : isFirst ? `Activate — $${pkg.price.toLocaleString()}`
             : `Upgrade — $${pkg.price.toLocaleString()}`;
 

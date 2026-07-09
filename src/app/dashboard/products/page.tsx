@@ -1,8 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { REORDER_PACKAGES } from '@/lib/packages';
 import { ShoppingBag, Check, Loader2, Sparkles, Droplets, Zap, Star } from 'lucide-react';
+
+const PRODUCT_IMAGES = [
+  { src: '/products/product-1.jpeg', alt: 'BoldGlow Gold Mask — front view' },
+  { src: '/products/product-2.jpeg', alt: 'BoldGlow Gold Mask — Be Bold variant' },
+  { src: '/products/model.jpeg', alt: 'BoldGlow Gold Mask — in use' },
+  { src: '/products/product-packaging.jpeg', alt: 'BoldGlow Gold Mask — full packaging' },
+];
 
 const BENEFITS = [
   'Reduces appearance of fine lines and wrinkles',
@@ -34,6 +42,7 @@ export default function ProductsPage() {
   const [working, setWorking] = useState<number | null>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [activeImg, setActiveImg] = useState(0);
 
   useEffect(() => {
     fetch('/api/dashboard')
@@ -102,73 +111,93 @@ export default function ProductsPage() {
 
       {/* Product Info */}
       <div className="glass rounded-2xl p-6 gold-border-glow">
-        <div className="flex items-start gap-5 flex-wrap">
-          {/* Product badge */}
-          <div className="flex-shrink-0 w-24 h-24 rounded-2xl flex items-center justify-center font-black text-3xl"
-            style={{ background: 'linear-gradient(135deg, #FFD700, #FF8C00)', color: '#000', boxShadow: '0 0 30px rgba(255,184,0,0.3)' }}>
-            B
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Image gallery */}
+          <div className="space-y-3">
+            <div className="relative w-full aspect-square rounded-2xl overflow-hidden"
+              style={{ background: '#0a0600', border: '1px solid rgba(255,184,0,0.15)' }}>
+              <Image
+                src={PRODUCT_IMAGES[activeImg].src}
+                alt={PRODUCT_IMAGES[activeImg].alt}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {PRODUCT_IMAGES.map((img, i) => (
+                <button key={i} onClick={() => setActiveImg(i)}
+                  className="relative aspect-square rounded-xl overflow-hidden transition-all"
+                  style={{
+                    border: activeImg === i ? '2px solid #FFB800' : '2px solid rgba(255,255,255,0.06)',
+                    opacity: activeImg === i ? 1 : 0.6,
+                  }}>
+                  <Image src={img.src} alt={img.alt} fill className="object-cover" sizes="80px" />
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: '#FF8C00' }}>BoldGlow™ by Boldgains International</p>
-            <h2 className="text-xl font-black text-white mb-1">Retinol Snake Venom Gold Peel-Off Mask</h2>
-            <p className="text-sm" style={{ color: '#888' }}>
-              Premium anti-aging beauty mask designed to rejuvenate, firm, and brighten the skin
-              while delivering a luxurious spa-like skincare experience.
-            </p>
-            <p className="text-xs mt-3 font-bold italic" style={{ color: '#FFB800' }}>
-              "Be Bold. Gain Power. Reveal Your Golden Glow."
-            </p>
+
+          {/* Product details */}
+          <div className="flex flex-col justify-between">
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: '#FF8C00' }}>BoldGlow™ by Boldgains International</p>
+              <h2 className="text-2xl font-black text-white mb-3">Retinol Snake Venom Gold Peel-Off Mask</h2>
+              <p className="text-sm leading-relaxed" style={{ color: '#888' }}>
+                Premium anti-aging beauty mask designed to rejuvenate, firm, and brighten the skin
+                while delivering a luxurious spa-like skincare experience.
+              </p>
+              <p className="text-sm mt-4 font-bold italic" style={{ color: '#FFB800' }}>
+                "Be Bold. Gain Power. Reveal Your Golden Glow."
+              </p>
+
+              <div className="mt-5 space-y-2">
+                {BENEFITS.map((b, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
+                      style={{ background: 'rgba(255,184,0,0.15)', border: '1px solid rgba(255,184,0,0.3)' }}>
+                      <div className="w-1 h-1 rounded-full bg-amber-400" />
+                    </div>
+                    <p className="text-sm text-gray-300">{b}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="h-px my-6" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Benefits */}
+          {/* Ingredients */}
           <div>
-            <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#FF8C00' }}>Key Benefits</p>
+            <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#FF8C00' }}>Hero Ingredients</p>
             <div className="space-y-2">
-              {BENEFITS.map((b, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <div className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
-                    style={{ background: 'rgba(255,184,0,0.15)', border: '1px solid rgba(255,184,0,0.3)' }}>
-                    <div className="w-1 h-1 rounded-full bg-amber-400" />
+              {INGREDIENTS.map((ing, i) => (
+                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl"
+                  style={{ background: 'rgba(255,184,0,0.04)', border: '1px solid rgba(255,184,0,0.1)' }}>
+                  <ing.icon className="w-4 h-4 flex-shrink-0 text-amber-400" />
+                  <div>
+                    <p className="text-sm font-semibold text-white">{ing.name}</p>
+                    <p className="text-xs" style={{ color: '#666' }}>{ing.desc}</p>
                   </div>
-                  <p className="text-sm text-gray-300">{b}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Ingredients + How to use */}
-          <div className="space-y-5">
-            <div>
-              <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#FF8C00' }}>Hero Ingredients</p>
-              <div className="space-y-2">
-                {INGREDIENTS.map((ing, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl"
-                    style={{ background: 'rgba(255,184,0,0.04)', border: '1px solid rgba(255,184,0,0.1)' }}>
-                    <ing.icon className="w-4 h-4 flex-shrink-0 text-amber-400" />
-                    <div>
-                      <p className="text-sm font-semibold text-white">{ing.name}</p>
-                      <p className="text-xs" style={{ color: '#666' }}>{ing.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#FF8C00' }}>How to Use</p>
-              <div className="space-y-1.5">
-                {HOW_TO_USE.map((step, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="text-xs font-black flex-shrink-0 mt-0.5"
-                      style={{ color: '#FF8C00' }}>{String(i + 1).padStart(2, '0')}</span>
-                    <p className="text-xs text-gray-400">{step}</p>
-                  </div>
-                ))}
-              </div>
+          {/* How to use */}
+          <div>
+            <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#FF8C00' }}>How to Use</p>
+            <div className="space-y-1.5">
+              {HOW_TO_USE.map((step, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <span className="text-xs font-black flex-shrink-0 mt-0.5"
+                    style={{ color: '#FF8C00' }}>{String(i + 1).padStart(2, '0')}</span>
+                  <p className="text-xs text-gray-400">{step}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -179,7 +208,7 @@ export default function ProductsPage() {
         <div className="mb-6">
           <h2 className="text-lg font-black text-white">Product Reorder Packages</h2>
           <p className="text-gray-500 text-sm mt-1">
-            Purchase from your wallet balance. Your sponsor earns 45% product reorder bonus instantly.
+            Purchase from your wallet balance. 30% is distributed across all 10 upline levels instantly.
           </p>
         </div>
 
@@ -211,12 +240,8 @@ export default function ProductsPage() {
 
                 <div className="space-y-1.5 mb-5 text-xs text-gray-500">
                   <div className="flex justify-between">
-                    <span>Sponsor bonus (45%)</span>
-                    <span className="text-emerald-400 font-semibold">${(pkg.price * 0.45).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Network level (30%)</span>
-                    <span style={{ color: '#3b82f6' }}>${(pkg.price * 0.30).toFixed(2)}</span>
+                    <span>Network levels L1–L10 (30%)</span>
+                    <span className="text-emerald-400 font-semibold">${(pkg.price * 0.30).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Leadership pool (15%)</span>
@@ -254,10 +279,9 @@ export default function ProductsPage() {
         <div className="mt-6 p-4 rounded-xl"
           style={{ background: 'rgba(255,184,0,0.03)', border: '1px solid rgba(255,184,0,0.1)' }}>
           <p className="text-xs font-bold text-amber-400 mb-2">Product Reorder Bonus Distribution</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div className="grid grid-cols-3 gap-3 text-center">
             {[
-              { label: 'Products Bonus', value: '45%', color: '#f43f5e' },
-              { label: 'Network Level', value: '30%', color: '#3b82f6' },
+              { label: 'Network Levels (L1–L10)', value: '30%', color: '#10b981' },
               { label: 'Leadership Pool', value: '15%', color: '#a78bfa' },
               { label: 'Rank Pool', value: '10%', color: '#f59e0b' },
             ].map((b, i) => (

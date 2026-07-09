@@ -28,6 +28,7 @@ export const CONTRACT_ABI = [
   'event UpgradeFeePaid(address indexed from, string userId, uint8 packageLevel, uint256 gross, uint256 fee, uint256 net)',
   'event Deposited(address indexed from, string userId, uint256 gross, uint256 fee, uint256 net)',
   'event PayoutSent(address indexed to, uint256 amount, string ref)',
+  'event PayoutFailed(address indexed to, uint256 amount, string ref)',
   'event BatchPayoutExecuted(string txRef, uint256 total, uint256 count)',
   'event EmergencyWithdraw(address indexed to, uint256 amount)',
 ] as const;

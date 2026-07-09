@@ -101,7 +101,7 @@ export default function AdminPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['Member', 'Email', 'Package', 'Referral Code', 'Sponsor', 'Balance', 'Earned', 'Joined'].map(h => (
+                {['Member', 'Email', 'Package', 'Referral Code', 'Sponsor', 'BSC Wallet', 'Balance', 'Earned', 'Joined'].map(h => (
                   <th key={h} className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -134,6 +134,11 @@ export default function AdminPage() {
                     </td>
                     <td className="py-3 px-3 font-mono text-amber-400 text-xs">{u.referral_code}</td>
                     <td className="py-3 px-3 text-gray-400 text-xs">{u.sponsor_name || '—'}</td>
+                    <td className="py-3 px-3 text-xs font-mono">
+                      {u.bsc_address
+                        ? <span className="text-amber-400" title={u.bsc_address}>{u.bsc_address.slice(0, 6)}…{u.bsc_address.slice(-4)}</span>
+                        : <span className="text-gray-700">—</span>}
+                    </td>
                     <td className="py-3 px-3 text-amber-400 font-semibold">${(u.wallet_balance || 0).toFixed(2)}</td>
                     <td className="py-3 px-3 text-emerald-400">${(u.total_earned || 0).toFixed(2)}</td>
                     <td className="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">

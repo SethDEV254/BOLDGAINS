@@ -236,6 +236,11 @@ code, kbd, pre, .font-mono {
   opacity: 0.35;
 }
 
+@keyframes shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
 /* ── Divider ── */
 .gold-divider {
   height: 1px;

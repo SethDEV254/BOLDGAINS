@@ -120,7 +120,7 @@ export default function DashboardPage() {
               { label: 'Network Level (15%)', value: earnings.networkLevel, color: '#3b82f6' },
               { label: 'Leadership Pool (15%)', value: earnings.leadershipPool, color: '#a78bfa' },
               { label: 'Rank Pool (10%)', value: earnings.rankPool, color: '#f59e0b' },
-              { label: 'Products (30%)', value: earnings.products, color: '#f43f5e' },
+              { label: 'Product Reorder (45%)', value: earnings.productReorder, color: '#f43f5e' },
             ].map((e, i) => {
               const pct = earnings.total > 0 ? (e.value / earnings.total) * 100 : 0;
               return (

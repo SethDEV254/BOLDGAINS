@@ -4,10 +4,9 @@ import {
   getUserByEmail, getUserByBscAddress, createUser,
   createTransaction, getTransactionByReference, getUserById,
 } from '@/lib/db';
-import { createSession, generateReferralCode } from '@/lib/auth';
+import { generateReferralCode } from '@/lib/auth';
 import { REGISTRATION_FEE, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
 import { distributePayouts, PayoutItem } from '@/lib/payout';
-import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -110,14 +109,7 @@ export async function POST(req: NextRequest) {
       await distributePayouts(payouts);
     }
 
-    const token = await createSession({ userId, email, role: 'member', name });
-    const cookieStore = await cookies();
-    cookieStore.set('bg_session', token, {
-      httpOnly: true, secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/',
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, pending: true });
   } catch (err) {
     console.error('[register]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

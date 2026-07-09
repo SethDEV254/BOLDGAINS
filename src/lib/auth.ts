@@ -2,7 +2,9 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'boldgains-super-secret-key-2024');
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) throw new Error('JWT_SECRET env var is not set');
+const SECRET = new TextEncoder().encode(jwtSecret);
 const COOKIE_NAME = 'bg_session';
 
 export interface SessionPayload {
