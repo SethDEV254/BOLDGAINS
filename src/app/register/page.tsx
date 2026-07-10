@@ -70,12 +70,15 @@ function RegisterForm() {
     setError('');
 
     try {
-      let hash: string | undefined;
-
-      if (wallet.isReady) {
-        const price = bnbPrice || await getBnbPrice();
-        hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), saved.email);
+      if (!wallet.isReady) {
+        setError('Wallet connection still finalizing — wait a moment and try again.');
+        setStep('confirm');
+        setLoading(false);
+        return;
       }
+
+      const price = bnbPrice || await getBnbPrice();
+      const hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), saved.email);
 
       const res = await fetch('/api/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -178,10 +181,12 @@ function RegisterForm() {
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#888' }}>
                   Cancel
                 </button>
-                <button onClick={handleConfirmPay} disabled={isBusy}
+                <button onClick={handleConfirmPay} disabled={isBusy || !wallet.isReady}
                   className="btn-gold flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
                   {isBusy
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Paying…</>
+                    : !wallet.isReady
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Finalizing wallet…</>
                     : <><Check className="w-4 h-4" /> Confirm &amp; Pay</>}
                 </button>
               </div>

@@ -48,15 +48,16 @@ export default function PackagesPage() {
       return;
     }
 
+    if (!wallet.isReady) {
+      showToast('Wallet connection still finalizing — wait a moment and try again.');
+      return;
+    }
+
     setWorking(level);
     const pkg = PACKAGES.find(p => p.level === level)!;
 
     try {
-      let txHash: string | undefined;
-
-      if (wallet.isReady) {
-        txHash = await wallet.payUpgradeFee(bnbAmount, userId, level);
-      }
+      const txHash = await wallet.payUpgradeFee(bnbAmount, userId, level);
 
       const res = await fetch('/api/packages/upgrade', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
