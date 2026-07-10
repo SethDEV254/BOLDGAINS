@@ -32,7 +32,7 @@ export async function sendToPool(
     const signer   = getSigner();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
     const amountWei = parseUnits(amountBnb.toFixed(8), 18);
-    const tx = await contract.processWithdrawal(address, amountWei, ref);
+    const tx = await contract['productAcquisition(address,uint256,string)'](address, amountWei, ref);
     await tx.wait();
     return tx.hash as string;
   } catch (err) {

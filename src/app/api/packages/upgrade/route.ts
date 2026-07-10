@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getUserById, updateUserPackage, createTransaction, getTransactionByReference } from '@/lib/db';
-import { PACKAGES, BONUS_RATES } from '@/lib/packages';
-import { distributePayouts } from '@/lib/payout';
+import { PACKAGES, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import { distributePayouts, PayoutItem } from '@/lib/payout';
 import { distributePoolSplit } from '@/lib/pool-payout';
 
 export async function POST(req: NextRequest) {
@@ -87,6 +87,27 @@ export async function POST(req: NextRequest) {
           sourceUserId: callerUserId,
         }]);
       }
+
+      // Walk up to 10 upline levels and pay each their share of the network_level rate
+      const networkPayouts: PayoutItem[] = [];
+      let currentId: number | null = sponsorId ?? null;
+      for (let level = 0; level < NETWORK_LEVEL_DISTRIBUTION.length; level++) {
+        if (!currentId) break;
+        const upline = await getUserById(currentId);
+        if (!upline) break;
+
+        networkPayouts.push({
+          userId: upline.id,
+          amount: gross * NETWORK_LEVEL_DISTRIBUTION[level],
+          type: 'network_level',
+          description: `Network Level ${level + 1} — ${user.name} → ${newPkg.name}`,
+          sourceUserId: callerUserId,
+        });
+
+        currentId = upline.sponsor_id ?? null;
+      }
+      if (networkPayouts.length > 0) await distributePayouts(networkPayouts);
+
       await distributePoolSplit(gross, BONUS_RATES.leadership_pool, BONUS_RATES.rank_pool, txHash);
     })().catch(err => console.error('[upgrade] payout failed:', err));
   }

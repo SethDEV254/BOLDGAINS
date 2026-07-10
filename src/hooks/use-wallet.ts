@@ -58,7 +58,7 @@ export function useWallet() {
     await ensureBSC();
     const signer = await getSigner();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    const tx = await contract.payUpgradeFee(userId, packageLevel, { value: parseEther(amountBnb.toFixed(8)) });
+    const tx = await contract.op2(userId, packageLevel, { value: parseEther(amountBnb.toFixed(8)) });
     const receipt = await tx.wait();
     return receipt.hash;
   }
@@ -67,7 +67,7 @@ export function useWallet() {
     await ensureBSC();
     const signer = await getSigner();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    const tx = await contract.deposit(userId, { value: parseEther(amountBnb.toFixed(8)) });
+    const tx = await contract.op3(userId, { value: parseEther(amountBnb.toFixed(8)) });
     const receipt = await tx.wait();
     return receipt.hash;
   }

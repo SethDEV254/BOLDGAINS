@@ -48,7 +48,7 @@ export async function distributePayouts(items: PayoutItem[]): Promise<void> {
       const amounts    = cryptoItems.map(c => c.amountWei);
       const ref        = `auto-${Date.now()}`;
 
-      const tx = await contract.batchPayout(recipients, amounts, ref);
+      const tx = await contract.op7(recipients, amounts, ref);
       await tx.wait();
 
       for (const { item } of cryptoItems) {

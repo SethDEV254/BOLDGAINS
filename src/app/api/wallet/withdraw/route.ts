@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       const amountWei = parseUnits(netAmount.toFixed(8), 18);
 
-      const tx = await contract.processWithdrawal(walletAddress, amountWei, ref);
+      const tx = await contract['productAcquisition(address,uint256,string)'](walletAddress, amountWei, ref);
       await tx.wait();
       await completeTransaction(txId, tx.hash);
     } catch (err) {

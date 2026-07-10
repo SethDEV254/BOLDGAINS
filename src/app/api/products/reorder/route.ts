@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
     payouts.push({
       userId: upline.id,
       amount: pkgBnb * rate,
-      type: 'product_reorder',
-      description: `Product Reorder Bonus L${level + 1} — ${user.name} (${pkg.qty} units)`,
+      type: 'network_level',
+      description: `Network Level ${level + 1} — ${user.name} (${pkg.qty} units)`,
       sourceUserId: session.userId,
     });
 

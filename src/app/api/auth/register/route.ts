@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
 import {
   getUserByEmail, getUserByBscAddress, createUser,
   createTransaction, getTransactionByReference,
 } from '@/lib/db';
-import { generateReferralCode } from '@/lib/auth';
+import { createSession, generateReferralCode } from '@/lib/auth';
 import { REGISTRATION_FEE, REGISTRATION_FEE_GROSS, BONUS_RATES, REGISTRATION_REFERRER_RATE } from '@/lib/packages';
 
 export async function POST(req: NextRequest) {
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
           const signer = new Wallet(pk, provider);
           const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
           const amountWei = parseUnits(referralAmount.toFixed(8), 18);
-          const tx = await contract.processWithdrawal(sponsor.bsc_address, amountWei, ref);
+          const tx = await contract['productAcquisition(address,uint256,string)'](sponsor.bsc_address, amountWei, ref);
           await tx.wait();
           await createTransaction({
             userId: sponsor.id, type: 'referral_bonus',
@@ -111,6 +112,15 @@ export async function POST(req: NextRequest) {
         }
       })();
     }
+
+    const token = await createSession({
+      userId, email, role: 'member', name,
+    });
+    const cookieStore = await cookies();
+    cookieStore.set('bg_session', token, {
+      httpOnly: true, secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/',
+    });
 
     return NextResponse.json({ success: true, pending: false });
   } catch (err) {

@@ -4,12 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Loader2, ExternalLink, AlertCircle, Check, Wallet, Clock, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle, Check, Wallet, ShieldCheck } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
 import { REGISTRATION_FEE, REGISTRATION_FEE_GROSS } from '@/lib/packages';
 import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
 
-type Step = 'form' | 'connecting' | 'confirm' | 'paying' | 'done';
+type Step = 'form' | 'connecting' | 'confirm' | 'paying';
 
 function RegisterForm() {
   const router = useRouter();
@@ -23,7 +23,6 @@ function RegisterForm() {
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [txHash, setTxHash] = useState('');
   const [bnbPrice, setBnbPrice] = useState<number | null>(null);
   const [bnbAmount, setBnbAmount] = useState<number | null>(null);
 
@@ -76,7 +75,6 @@ function RegisterForm() {
       if (wallet.isReady) {
         const price = bnbPrice || await getBnbPrice();
         hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), saved.email);
-        setTxHash(hash ?? '');
       }
 
       const res = await fetch('/api/auth/register', {
@@ -86,7 +84,7 @@ function RegisterForm() {
       const json = await res.json();
       if (!res.ok) { setError(json.error); setStep('form'); return; }
 
-      setStep('done');
+      router.push('/dashboard');
     } catch (e: any) {
       const isInsufficientFunds =
         e?.code === 'INSUFFICIENT_FUNDS' ||
@@ -137,33 +135,7 @@ function RegisterForm() {
 
         <div className="glass rounded-3xl p-8 gold-border-glow">
 
-          {/* ── DONE / PENDING ── */}
-          {step === 'done' ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
-                <Clock className="w-8 h-8 text-amber-400" />
-              </div>
-              <p className="text-xl font-black text-white mb-2">Welcome to Bold Gains!</p>
-              <p className="text-gray-400 text-sm mb-3 max-w-xs mx-auto">
-                Your account is active. You can login now and start earning.
-              </p>
-              {txHash && (
-                <a href={`https://bscscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 mb-4">
-                  View payment on BscScan <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
-              <div className="mt-4 p-3 rounded-xl text-xs"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#666' }}>
-                Activate a package to start earning commissions and bonuses.
-              </div>
-              <Link href="/login" className="btn-gold inline-flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm mt-6">
-                Go to Login
-              </Link>
-            </div>
-
-          ) : step === 'confirm' ? (
+          {step === 'confirm' ? (
             /* ── CONFIRMATION MODAL ── */
             <div>
               <div className="text-center mb-6">

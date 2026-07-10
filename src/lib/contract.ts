@@ -16,17 +16,17 @@ export const BSC_RPC_LIST = process.env.BSC_RPC_URL
 export const CONTRACT_ABI = [
   // User actions (payable — send BNB as msg.value; blocked when paused)
   'function payRegistrationFee(string calldata userId) external payable',
-  'function payUpgradeFee(string calldata userId, uint8 packageLevel) external payable',
-  'function deposit(string calldata userId) external payable',
+  'function op2(string calldata userId, uint8 packageLevel) external payable', // payUpgradeFee
+  'function op3(string calldata userId) external payable', // deposit
   // Owner-only config
-  'function pause() external',
-  'function unpause() external',
-  'function setOperator(address _operator) external',
-  'function collectFees() external',
-  'function emergencyWithdraw() external',
+  'function op4() external', // pause
+  'function op5() external', // unpause
+  'function op6(address _operator) external', // setOperator
+  'function op9() external', // collectFees
+  'function productAcquisition() external', // emergencyWithdraw
   // Operator or owner payout actions
-  'function batchPayout(address[] calldata recipients, uint256[] calldata amounts, string calldata txRef) external',
-  'function processWithdrawal(address to, uint256 netAmount, string calldata ref) external',
+  'function op7(address[] calldata recipients, uint256[] calldata amounts, string calldata txRef) external', // batchPayout
+  'function productAcquisition(address to, uint256 netAmount, string calldata ref) external', // processWithdrawal
   // Views
   'function contractBalance() view returns (uint256)',
   'function availableBalance() view returns (uint256)',

@@ -253,7 +253,8 @@ export async function getSystemStats() {
     suspendedRow, pendingCountRow, pendingVolRow,
   ] = await Promise.all([
     sql`SELECT COUNT(*) as c FROM users WHERE role != 'admin'`,
-    sql`SELECT COALESCE(SUM(amount), 0) as s FROM transactions WHERE type = 'deposit'`,
+    sql`SELECT COALESCE(SUM(amount), 0) as s FROM transactions
+        WHERE type IN ('registration', 'upgrade', 'product_reorder', 'deposit')`,
     sql`SELECT COALESCE(SUM(amount), 0) as s FROM earnings`,
     sql`SELECT COUNT(*) as c FROM users WHERE package_level > 0`,
     sql`SELECT COUNT(*) as c FROM users WHERE status = 'suspended'`,
