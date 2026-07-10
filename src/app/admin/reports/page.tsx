@@ -25,10 +25,17 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/admin/reports').then(r => r.json()).then(d => {
+    let cancelled = false;
+    async function load(isInitial: boolean) {
+      const d = await fetch('/api/admin/reports').then(r => r.json());
+      if (cancelled) return;
       if (d.error) { window.location.href = '/login'; return; }
       setData(d);
-    }).finally(() => setLoading(false));
+      if (isInitial) setLoading(false);
+    }
+    load(true);
+    const interval = setInterval(() => load(false), 8000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-amber-400 animate-spin" /></div>;

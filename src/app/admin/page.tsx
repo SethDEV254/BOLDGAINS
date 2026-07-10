@@ -10,13 +10,20 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/users').then(r => r.json()).then(d => {
+    let cancelled = false;
+    async function load(isInitial: boolean) {
+      const d = await fetch('/api/admin/users').then(r => r.json());
+      if (cancelled) return;
       if (d.error === 'Forbidden') {
         window.location.href = '/login?redirect=admin';
-      } else {
-        setData(d);
+        return;
       }
-    }).finally(() => setLoading(false));
+      setData(d);
+      if (isInitial) setLoading(false);
+    }
+    load(true);
+    const interval = setInterval(() => load(false), 8000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   if (loading) return (

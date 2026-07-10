@@ -11,7 +11,16 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch('/api/dashboard').then(r => r.json()).then(setData).finally(() => setLoading(false));
+    let cancelled = false;
+    async function load(isInitial: boolean) {
+      const d = await fetch('/api/dashboard').then(r => r.json());
+      if (cancelled) return;
+      setData(d);
+      if (isInitial) setLoading(false);
+    }
+    load(true);
+    const interval = setInterval(() => load(false), 8000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   const refLink = data?.user?.bscAddress
