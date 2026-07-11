@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import {
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
       // 50% of base $10 fee = $5 (not 50% of net $9.90)
       const referralAmount = verifiedGross * (REGISTRATION_FEE / REGISTRATION_FEE_GROSS) * REGISTRATION_REFERRER_RATE;
       const ref = `reg-ref-${userId}`;
-      (async () => {
+      after(async () => {
         try {
           const { JsonRpcProvider, Wallet, Contract, parseUnits } = await import('ethers');
           const { BSC_RPC, CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
@@ -109,8 +109,15 @@ export async function POST(req: NextRequest) {
           });
         } catch (err) {
           console.error('[register] referral on-chain payout failed:', err);
+          await createTransaction({
+            userId: sponsor.id, type: 'referral_bonus',
+            amount: referralAmount, fee: 0, netAmount: referralAmount,
+            description: `Registration referral bonus — ${name} registered (FAILED: ${err instanceof Error ? err.message : String(err)})`,
+            reference: ref,
+            status: 'failed',
+          });
         }
-      })();
+      });
     }
 
     const token = await createSession({
