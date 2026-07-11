@@ -23,6 +23,9 @@ export async function GET() {
       leadership_pool: summaryMap['leadership_pool'] || 0,
       rank_pool: summaryMap['rank_pool'] || 0,
       product_reorder: summaryMap['product_reorder'] || 0,
+      referral_direct: summaryMap['referral_direct'] || 0,
+      referral_indirect: summaryMap['referral_indirect'] || 0,
+      referral_bonus: summaryMap['referral_bonus'] || 0,
     },
     history: earnings,
   });

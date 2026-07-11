@@ -5,7 +5,10 @@ import {
   Settings, DollarSign, Percent, Shield, Copy, Check,
   ExternalLink, Info, Package, Wallet,
 } from 'lucide-react';
-import { PACKAGES, REGISTRATION_FEE, REGISTRATION_FEE_GROSS, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
+import {
+  PACKAGES, REGISTRATION_FEE, REGISTRATION_FEE_GROSS, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION,
+  REGISTRATION_REFERRAL_DIRECT_RATE, REGISTRATION_REFERRAL_INDIRECT_RATE,
+} from '@/lib/packages';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
 
@@ -86,6 +89,8 @@ export default function SettingsPage() {
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Platform Rates</p>
             <InfoRow label="Registration Fee (gross)" value={`$${REGISTRATION_FEE_GROSS} USD`} color="#f59e0b" />
             <InfoRow label="Registration Base" value={`$${REGISTRATION_FEE} USD`} color="#9ca3af" />
+            <InfoRow label="Referral Direct" value={`${(REGISTRATION_REFERRAL_DIRECT_RATE * 100).toFixed(0)}%`} color="#22d3ee" />
+            <InfoRow label="Referral Indirect" value={`${(REGISTRATION_REFERRAL_INDIRECT_RATE * 100).toFixed(0)}%`} color="#ec4899" />
             <InfoRow label="Platform Fee (deposit)" value={`${(BONUS_RATES.management_fee_deposit * 100).toFixed(0)}%`} color="#f87171" />
             <InfoRow label="Withdrawal Fee" value="None" color="#34d399" />
             <InfoRow label="Upgrade Bonus" value={`${(BONUS_RATES.upgrade_bonus * 100).toFixed(0)}%`} color="#34d399" />

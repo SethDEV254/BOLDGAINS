@@ -213,6 +213,17 @@ export async function getUserEarningsSummary(userId: number) {
   `;
 }
 
+export async function getLatestActivityId(userId: number | null) {
+  const sql = await getDb();
+  const [earningsRow] = userId
+    ? await sql`SELECT MAX(id) as max FROM earnings WHERE user_id = ${userId}`
+    : await sql`SELECT MAX(id) as max FROM earnings`;
+  const [txRow] = userId
+    ? await sql`SELECT MAX(id) as max FROM transactions WHERE user_id = ${userId}`
+    : await sql`SELECT MAX(id) as max FROM transactions`;
+  return { earningsMaxId: Number(earningsRow?.max) || 0, txMaxId: Number(txRow?.max) || 0 };
+}
+
 export async function getDirectDownlines(userId: number) {
   const sql = await getDb();
   return await sql`

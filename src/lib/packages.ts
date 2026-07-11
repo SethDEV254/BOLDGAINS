@@ -26,7 +26,9 @@ export const PACKAGES: Package[] = [
 // Fixed one-time fee paid at registration (no package assigned)
 export const REGISTRATION_FEE = 10; // $10 USD base registration fee
 export const REGISTRATION_FEE_GROSS = 11; // $10 + 10% fee = $11 USD paid in BNB
-export const REGISTRATION_REFERRER_RATE = 0.50; // 50% of net goes to direct referrer; 50% stays in contract
+export const REGISTRATION_REFERRAL_DIRECT_RATE = 0.30; // 30% of base fee to direct sponsor
+export const REGISTRATION_REFERRAL_INDIRECT_RATE = 0.15; // 15% of base fee to indirect (level-2) sponsor
+// remaining 5% of the base fee stays in the contract as liquidity
 
 // Minimum withdrawal net amount in USD
 export const MIN_WITHDRAWAL_NET_USD = 10;

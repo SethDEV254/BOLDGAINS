@@ -8,12 +8,15 @@ import {
   LineChart, Line, ReferenceLine,
 } from 'recharts';
 import { PACKAGES } from '@/lib/packages';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 
 const EARNING_LABELS: Record<string, string> = {
   upgrade_bonus: 'Upgrade Bonus', network_level: 'Network Level',
   leadership_pool: 'Leadership Pool', rank_pool: 'Rank Pool', products: 'Products',
+  referral_direct: 'Referral Direct', referral_indirect: 'Referral Indirect',
+  referral_bonus: 'Referral Bonus (Legacy)',
 };
-const EARNING_COLORS = ['#10b981', '#3b82f6', '#a78bfa', '#f59e0b', '#f43f5e'];
+const EARNING_COLORS = ['#10b981', '#3b82f6', '#a78bfa', '#f59e0b', '#f43f5e', '#22d3ee', '#ec4899', '#9ca3af'];
 
 const TX_COLORS: Record<string, string> = {
   deposit: '#10b981', withdrawal: '#f59e0b', registration: '#3b82f6',
@@ -34,9 +37,15 @@ export default function ReportsPage() {
       if (isInitial) setLoading(false);
     }
     load(true);
-    const interval = setInterval(() => load(false), 8000);
+    const interval = setInterval(() => load(false), 45000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
+
+  useLiveUpdates(() => {
+    fetch('/api/admin/reports').then(r => r.json()).then(d => {
+      if (!d.error) setData(d);
+    });
+  });
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-amber-400 animate-spin" /></div>;
   if (!data) return null;

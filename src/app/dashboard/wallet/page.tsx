@@ -5,6 +5,7 @@ import { Wallet, ArrowDownLeft, ArrowUpRight, Loader2, AlertCircle, Check, Link2
 import { BONUS_RATES, MIN_WITHDRAWAL_NET_USD } from '@/lib/packages';
 import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
 import { useWallet } from '@/hooks/use-wallet';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 
 function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -39,6 +40,8 @@ export default function WalletPage() {
   useEffect(() => {
     if (wallet.address && !walletAddress) setWalletAddress(wallet.address);
   }, [wallet.address]);
+
+  useLiveUpdates(loadData);
 
   const amt = parseFloat(amount) || 0;
   const fee = amt > 0 ? amt * (tab === 'deposit' ? BONUS_RATES.management_fee_deposit : BONUS_RATES.management_fee_withdrawal) : 0;

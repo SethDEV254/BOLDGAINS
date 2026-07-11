@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, Award, Users, Star, Zap, Package, Loader2 } from 'lucide-react';
+import { TrendingUp, Award, Users, Star, Zap, Package, Loader2, UserPlus, GitBranch, History } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 
 const EARNING_TYPES: Record<string, { label: string; icon: any; color: string; desc: string }> = {
   upgrade_bonus: { label: 'Upgrade Bonus', icon: TrendingUp, color: '#10b981', desc: '30% when referrals upgrade' },
@@ -10,6 +11,9 @@ const EARNING_TYPES: Record<string, { label: string; icon: any; color: string; d
   leadership_pool: { label: 'Leadership Pool', icon: Award, color: '#a78bfa', desc: '15% distributed to leaders' },
   rank_pool: { label: 'Rank Pool', icon: Star, color: '#f59e0b', desc: '10% distributed by rank' },
   product_reorder: { label: 'Product Reorder Bonus', icon: Package, color: '#f43f5e', desc: '45% on BoldGlow™ reorders' },
+  referral_direct: { label: 'Referral Direct', icon: UserPlus, color: '#22d3ee', desc: '30% on direct registrations' },
+  referral_indirect: { label: 'Referral Indirect', icon: GitBranch, color: '#ec4899', desc: '15% on level-2 registrations' },
+  referral_bonus: { label: 'Referral Bonus (Legacy)', icon: History, color: '#9ca3af', desc: 'Paid under the prior 50% rule' },
 };
 
 export default function EarningsPage() {
@@ -25,9 +29,13 @@ export default function EarningsPage() {
       if (isInitial) setLoading(false);
     }
     load(true);
-    const interval = setInterval(() => load(false), 8000);
+    const interval = setInterval(() => load(false), 45000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
+
+  useLiveUpdates(() => {
+    fetch('/api/earnings').then(r => r.json()).then(setData);
+  });
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">

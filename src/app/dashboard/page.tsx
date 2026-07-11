@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { TrendingUp, Users, Wallet, Package, Copy, Check, ArrowUpRight, Loader2, Star } from 'lucide-react';
 import { PACKAGES } from '@/lib/packages';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -19,9 +20,13 @@ export default function DashboardPage() {
       if (isInitial) setLoading(false);
     }
     load(true);
-    const interval = setInterval(() => load(false), 8000);
+    const interval = setInterval(() => load(false), 45000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
+
+  useLiveUpdates(() => {
+    fetch('/api/dashboard').then(r => r.json()).then(setData);
+  });
 
   const refLink = data?.user?.bscAddress
     ? `${typeof window !== 'undefined' ? window.location.origin : 'https://bold-gains.vercel.app'}/register?ref=${data.user.bscAddress}`
@@ -130,7 +135,10 @@ export default function DashboardPage() {
               { label: 'Leadership Pool', value: earnings.leadershipPool, color: '#a78bfa' },
               { label: 'Rank Pool', value: earnings.rankPool, color: '#f59e0b' },
               { label: 'Product Reorder', value: earnings.productReorder, color: '#f43f5e' },
-            ].map((e, i) => {
+              { label: 'Referral Direct', value: earnings.referralDirect, color: '#22d3ee' },
+              { label: 'Referral Indirect', value: earnings.referralIndirect, color: '#ec4899' },
+              { label: 'Referral Bonus (Legacy)', value: earnings.referralLegacy, color: '#9ca3af', hideIfZero: true },
+            ].filter(e => e.value > 0 || !e.hideIfZero).map((e, i) => {
               const pct = earnings.total > 0 ? (e.value / earnings.total) * 100 : 0;
               return (
                 <div key={i}>

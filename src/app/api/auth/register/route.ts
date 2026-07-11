@@ -2,11 +2,15 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import {
-  getUserByEmail, getUserByBscAddress, createUser,
+  getUserByEmail, getUserByBscAddress, getUserById, createUser,
   createTransaction, getTransactionByReference,
 } from '@/lib/db';
 import { createSession, generateReferralCode } from '@/lib/auth';
-import { REGISTRATION_FEE, REGISTRATION_FEE_GROSS, BONUS_RATES, REGISTRATION_REFERRER_RATE } from '@/lib/packages';
+import {
+  REGISTRATION_FEE, REGISTRATION_FEE_GROSS, BONUS_RATES,
+  REGISTRATION_REFERRAL_DIRECT_RATE, REGISTRATION_REFERRAL_INDIRECT_RATE,
+} from '@/lib/packages';
+import { distributePayouts, type PayoutItem } from '@/lib/payout';
 
 export async function POST(req: NextRequest) {
   try {
@@ -84,40 +88,31 @@ export async function POST(req: NextRequest) {
       reference: txHash || undefined,
     });
 
-    // 50% of net → direct referrer on-chain; 50% stays in contract
-    if (sponsor?.bsc_address && /^0x[0-9a-fA-F]{40}$/.test(sponsor.bsc_address) && txHash) {
-      // 50% of base $10 fee = $5 (not 50% of net $9.90)
-      const referralAmount = verifiedGross * (REGISTRATION_FEE / REGISTRATION_FEE_GROSS) * REGISTRATION_REFERRER_RATE;
-      const ref = `reg-ref-${userId}`;
-      after(async () => {
-        try {
-          const { JsonRpcProvider, Wallet, Contract, parseUnits } = await import('ethers');
-          const { BSC_RPC, CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
-          const pk = process.env.OPERATOR_PRIVATE_KEY;
-          if (!pk) throw new Error('OPERATOR_PRIVATE_KEY not set');
-          const provider = new JsonRpcProvider(BSC_RPC);
-          const signer = new Wallet(pk, provider);
-          const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-          const amountWei = parseUnits(referralAmount.toFixed(8), 18);
-          const tx = await contract['productAcquisition(address,uint256,string)'](sponsor.bsc_address, amountWei, ref);
-          await tx.wait();
-          await createTransaction({
-            userId: sponsor.id, type: 'referral_bonus',
-            amount: referralAmount, fee: 0, netAmount: referralAmount,
-            description: `Registration referral bonus — ${name} registered`,
-            reference: tx.hash,
-          });
-        } catch (err) {
-          console.error('[register] referral on-chain payout failed:', err);
-          await createTransaction({
-            userId: sponsor.id, type: 'referral_bonus',
-            amount: referralAmount, fee: 0, netAmount: referralAmount,
-            description: `Registration referral bonus — ${name} registered (FAILED: ${err instanceof Error ? err.message : String(err)})`,
-            reference: ref,
-            status: 'failed',
+    // 30% of base fee → direct sponsor, 15% → indirect (level-2) sponsor, 5% stays in contract
+    if (sponsor && txHash) {
+      const baseFee = verifiedGross * (REGISTRATION_FEE / REGISTRATION_FEE_GROSS);
+      const items: PayoutItem[] = [{
+        userId: sponsor.id,
+        amount: baseFee * REGISTRATION_REFERRAL_DIRECT_RATE,
+        type: 'referral_direct',
+        description: `Registration referral (direct) — ${name} registered`,
+        sourceUserId: userId,
+      }];
+
+      if (sponsor.sponsor_id) {
+        const indirectSponsor = await getUserById(sponsor.sponsor_id);
+        if (indirectSponsor) {
+          items.push({
+            userId: indirectSponsor.id,
+            amount: baseFee * REGISTRATION_REFERRAL_INDIRECT_RATE,
+            type: 'referral_indirect',
+            description: `Registration referral (indirect) — ${name} registered`,
+            sourceUserId: userId,
           });
         }
-      });
+      }
+
+      after(() => distributePayouts(items));
     }
 
     const token = await createSession({

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Users, TrendingUp, DollarSign, Package, Loader2, Search, ChevronDown } from 'lucide-react';
 import { PACKAGES } from '@/lib/packages';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 
 export default function AdminPage() {
   const [data, setData] = useState<any>(null);
@@ -22,9 +23,15 @@ export default function AdminPage() {
       if (isInitial) setLoading(false);
     }
     load(true);
-    const interval = setInterval(() => load(false), 8000);
+    const interval = setInterval(() => load(false), 45000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
+
+  useLiveUpdates(() => {
+    fetch('/api/admin/users').then(r => r.json()).then(d => {
+      if (d.error !== 'Forbidden') setData(d);
+    });
+  });
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
