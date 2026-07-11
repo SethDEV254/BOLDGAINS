@@ -36,7 +36,6 @@ export function useWallet() {
   async function ensureBSC() {
     if (!chain || chain.id !== BSC_CHAIN_ID) {
       await switchChainAsync({ chainId: BSC_CHAIN_ID });
-      await new Promise(r => setTimeout(r, 800));
     }
   }
 

@@ -125,11 +125,11 @@ export default function DashboardPage() {
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'Upgrade Bonus (30%)', value: earnings.upgradeBonus, color: '#10b981' },
-              { label: 'Network Level (15%)', value: earnings.networkLevel, color: '#3b82f6' },
-              { label: 'Leadership Pool (15%)', value: earnings.leadershipPool, color: '#a78bfa' },
-              { label: 'Rank Pool (10%)', value: earnings.rankPool, color: '#f59e0b' },
-              { label: 'Product Reorder (45%)', value: earnings.productReorder, color: '#f43f5e' },
+              { label: 'Upgrade Bonus', value: earnings.upgradeBonus, color: '#10b981' },
+              { label: 'Network Level', value: earnings.networkLevel, color: '#3b82f6' },
+              { label: 'Leadership Pool', value: earnings.leadershipPool, color: '#a78bfa' },
+              { label: 'Rank Pool', value: earnings.rankPool, color: '#f59e0b' },
+              { label: 'Product Reorder', value: earnings.productReorder, color: '#f43f5e' },
             ].map((e, i) => {
               const pct = earnings.total > 0 ? (e.value / earnings.total) * 100 : 0;
               return (
