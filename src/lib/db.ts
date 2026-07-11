@@ -73,6 +73,7 @@ async function ensureInit() {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS bsc_address TEXT`;
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member'`;
     await sql`UPDATE users SET status = 'active' WHERE status IS NULL`;
+    await sql`ALTER TABLE earnings ADD COLUMN IF NOT EXISTS on_chain BOOLEAN DEFAULT false`;
 
     const admins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
     if (admins.length === 0) {
@@ -160,8 +161,8 @@ export async function updateWalletBalance(userId: number, amount: number) {
 export async function addEarning(userId: number, type: string, amount: number, sourceUserId?: number, description?: string) {
   const sql = await getDb();
   await sql`
-    INSERT INTO earnings (user_id, type, amount, source_user_id, description)
-    VALUES (${userId}, ${type}, ${amount}, ${sourceUserId ?? null}, ${description ?? null})
+    INSERT INTO earnings (user_id, type, amount, source_user_id, description, on_chain)
+    VALUES (${userId}, ${type}, ${amount}, ${sourceUserId ?? null}, ${description ?? null}, false)
   `;
   await sql`
     UPDATE users SET wallet_balance = wallet_balance + ${amount}, total_earned = total_earned + ${amount}
@@ -172,8 +173,8 @@ export async function addEarning(userId: number, type: string, amount: number, s
 export async function recordEarning(userId: number, type: string, amount: number, sourceUserId?: number, description?: string) {
   const sql = await getDb();
   await sql`
-    INSERT INTO earnings (user_id, type, amount, source_user_id, description)
-    VALUES (${userId}, ${type}, ${amount}, ${sourceUserId ?? null}, ${description ?? null})
+    INSERT INTO earnings (user_id, type, amount, source_user_id, description, on_chain)
+    VALUES (${userId}, ${type}, ${amount}, ${sourceUserId ?? null}, ${description ?? null}, true)
   `;
   await sql`UPDATE users SET total_earned = total_earned + ${amount} WHERE id = ${userId}`;
 }

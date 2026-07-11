@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, Award, Users, Star, Zap, Package, Loader2, UserPlus, GitBranch, History } from 'lucide-react';
+import { TrendingUp, Award, Users, Star, Zap, Package, Loader2, UserPlus, GitBranch, History, Link2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLiveUpdates } from '@/hooks/use-live-updates';
 
@@ -137,7 +137,15 @@ export default function EarningsPage() {
                     {config?.icon && <config.icon className="w-4 h-4" style={{ color: config.color }} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white font-medium">{e.description || config?.label}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm text-white font-medium">{e.description || config?.label}</p>
+                      <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0"
+                        style={e.on_chain
+                          ? { background: 'rgba(16,185,129,0.15)', color: '#34d399' }
+                          : { background: 'rgba(255,255,255,0.06)', color: '#9ca3af' }}>
+                        {e.on_chain ? <><Link2 className="w-2.5 h-2.5" /> Sent to Wallet</> : 'Platform Credit'}
+                      </span>
+                    </div>
                     {e.source_name && <p className="text-xs text-gray-500">From {e.source_name}</p>}
                     <p className="text-xs text-gray-600">{new Date(e.created_at).toLocaleString()}</p>
                   </div>

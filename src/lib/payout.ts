@@ -52,8 +52,7 @@ export async function distributePayouts(items: PayoutItem[]): Promise<void> {
       await tx.wait();
 
       for (const { item } of cryptoItems) {
-        await recordEarning(item.userId, item.type, item.amount, item.sourceUserId,
-          item.description + ' [sent to wallet]');
+        await recordEarning(item.userId, item.type, item.amount, item.sourceUserId, item.description);
       }
     } catch (err) {
       console.error('[payout] batchPayout failed — falling back to platform credit:', err);
