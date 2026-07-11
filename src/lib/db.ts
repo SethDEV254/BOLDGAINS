@@ -65,6 +65,8 @@ async function ensureInit() {
     await sql`CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_transactions_ref ON transactions(reference)`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email))`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_name_lower ON users (LOWER(name))`;
 
     // Migrations — safe to run on every cold start
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`;
@@ -96,7 +98,13 @@ async function getDb() {
 
 export async function getUserByEmail(email: string) {
   const sql = await getDb();
-  const rows = await sql`SELECT * FROM users WHERE email = ${email}`;
+  const rows = await sql`SELECT * FROM users WHERE LOWER(email) = LOWER(${email})`;
+  return rows[0] || null;
+}
+
+export async function getUserByName(name: string) {
+  const sql = await getDb();
+  const rows = await sql`SELECT * FROM users WHERE LOWER(name) = LOWER(${name})`;
   return rows[0] || null;
 }
 

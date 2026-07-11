@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import {
-  getUserByEmail, getUserByBscAddress, getUserById, createUser,
+  getUserByEmail, getUserByName, getUserByBscAddress, getUserById, createUser,
   createTransaction, getTransactionByReference,
 } from '@/lib/db';
 import { createSession, generateReferralCode } from '@/lib/auth';
@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
 
     if (await getUserByEmail(email))
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+
+    if (await getUserByName(name))
+      return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
 
     let sponsor: any = null;
     if (refWallet && /^0x[0-9a-fA-F]{40}$/.test(refWallet)) {

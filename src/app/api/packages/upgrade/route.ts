@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getUserById, updateUserPackage, createTransaction, getTransactionByReference } from '@/lib/db';
 import { PACKAGES, BONUS_RATES, NETWORK_LEVEL_DISTRIBUTION } from '@/lib/packages';
@@ -72,12 +72,13 @@ export async function POST(req: NextRequest) {
 
   await updateUserPackage(session.userId, packageLevel);
 
-  // Fire-and-forget — sequential so both operator-wallet TXs never race on nonce
+  // Runs after the response is sent (after() keeps the invocation alive until
+  // it settles) — sequential so both operator-wallet TXs never race on nonce
   if (txHash) {
     const sponsorId = user.sponsor_id;
     const bonusDesc = `Upgrade bonus — ${user.name} → ${newPkg.name}`;
     const callerUserId = session.userId;
-    (async () => {
+    after(async () => {
       if (sponsorId) {
         await distributePayouts([{
           userId: sponsorId,
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
       if (networkPayouts.length > 0) await distributePayouts(networkPayouts);
 
       await distributePoolSplit(gross, BONUS_RATES.leadership_pool, BONUS_RATES.rank_pool, txHash);
-    })().catch(err => console.error('[upgrade] payout failed:', err));
+    });
   }
 
   return NextResponse.json({ success: true, package: newPkg });

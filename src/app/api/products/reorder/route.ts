@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getUserById, createTransaction, updateWalletBalance } from '@/lib/db';
 import { REORDER_PACKAGES, REORDER_LEVEL_DISTRIBUTION, REORDER_BONUS_RATES } from '@/lib/packages';
@@ -60,16 +60,17 @@ export async function POST(req: NextRequest) {
     currentId = upline.sponsor_id ?? null;
   }
 
-  // Sequential fire-and-forget — network payouts then pool cuts share the operator wallet;
-  // parallel calls would cause nonce conflicts.
+  // Runs after the response is sent (after() keeps the invocation alive until it
+  // settles) — sequential since network payouts and pool cuts share the operator
+  // wallet; parallel calls would cause nonce conflicts.
   const reorderRef = `reorder-${session.userId}-${Date.now()}`;
   const paidLevels = payouts.length;
-  (async () => {
+  after(async () => {
     if (payouts.length > 0) await distributePayouts(payouts);
     await sendToPool('products',   pkgBnb * REORDER_BONUS_RATES.products,       `${reorderRef}-products`);
     await sendToPool('leadership', pkgBnb * REORDER_BONUS_RATES.leadership_pool, `${reorderRef}-leadership`);
     await sendToPool('rank',       pkgBnb * REORDER_BONUS_RATES.rank_pool,       `${reorderRef}-rank`);
-  })().catch(err => console.error('[reorder] payout failed:', err));
+  });
 
   return NextResponse.json({ success: true, qty: pkg.qty, price: pkg.price, levelsRewarded: paidLevels });
 }

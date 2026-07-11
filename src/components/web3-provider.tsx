@@ -2,7 +2,7 @@
 
 import { createAppKit } from '@reown/appkit/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
+import { WagmiProvider, type State } from 'wagmi';
 import { ReactNode } from 'react';
 import { projectId, networks, wagmiAdapter, wagmiConfig } from '@/lib/web3modal';
 
@@ -42,9 +42,9 @@ createAppKit({
 
 const queryClient = new QueryClient();
 
-export function Web3Provider({ children }: { children: ReactNode }) {
+export function Web3Provider({ children, initialState }: { children: ReactNode; initialState?: State }) {
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiConfig} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         {children}
       </QueryClientProvider>

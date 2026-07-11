@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
+import { headers } from 'next/headers';
+import { cookieToInitialState } from 'wagmi';
 import './globals.css';
 import PrismStars from '@/components/prism-stars';
 import { Web3Provider } from '@/components/web3-provider';
+import { wagmiConfig } from '@/lib/web3modal';
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-sans',
@@ -24,11 +27,13 @@ export const metadata: Metadata = {
   icons: { icon: '/logo.jpeg' },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const initialState = cookieToInitialState(wagmiConfig, (await headers()).get('cookie'));
+
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen antialiased" style={{ background: '#000000', color: '#f0f0f0' }}>
-        <Web3Provider>
+        <Web3Provider initialState={initialState}>
           <PrismStars />
           <div style={{ position: 'relative', zIndex: 1 }}>
             {children}
