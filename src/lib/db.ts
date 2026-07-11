@@ -214,6 +214,15 @@ export async function getUserEarnings(userId: number) {
   `;
 }
 
+export async function getEarningsBySource(userId: number) {
+  const sql = await getDb();
+  return await sql`
+    SELECT source_user_id, SUM(amount) as total FROM earnings
+    WHERE user_id = ${userId} AND source_user_id IS NOT NULL
+    GROUP BY source_user_id
+  `;
+}
+
 export async function getUserEarningsSummary(userId: number) {
   const sql = await getDb();
   return await sql`

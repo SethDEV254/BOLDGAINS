@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Copy, Check, Users, TrendingUp, Loader2, ChevronDown, ChevronRight, Link2 } from 'lucide-react';
 import { PACKAGES } from '@/lib/packages';
+import { useLiveUpdates } from '@/hooks/use-live-updates';
 
 function NetworkNode({ node, depth = 0 }: { node: any; depth?: number }) {
   const [expanded, setExpanded] = useState(depth < 1);
@@ -28,7 +29,7 @@ function NetworkNode({ node, depth = 0 }: { node: any; depth?: number }) {
           </p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-xs text-emerald-400">${(node.total_earned || 0).toFixed(0)}</p>
+          <p className="text-xs text-emerald-400 font-semibold">${(node.earnedFromReferral || 0).toFixed(2)} earned</p>
           <p className="text-xs text-gray-600">{node.children?.length || 0} refs</p>
         </div>
         {node.children?.length > 0 && (
@@ -50,9 +51,15 @@ export default function NetworkPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  function load() {
+    return fetch('/api/network').then(r => r.json()).then(setData);
+  }
+
   useEffect(() => {
-    fetch('/api/network').then(r => r.json()).then(setData).finally(() => setLoading(false));
+    load().finally(() => setLoading(false));
   }, []);
+
+  useLiveUpdates(load);
 
   const refLink = data?.bscAddress
     ? `${typeof window !== 'undefined' ? window.location.origin : 'https://boldgains.net'}/register?ref=${data.bscAddress}`
@@ -82,10 +89,11 @@ export default function NetworkPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Direct Referrals', value: data.stats.directCount, icon: Users, color: '#f59e0b' },
           { label: 'Total Network', value: data.stats.totalNetwork, icon: TrendingUp, color: '#10b981' },
+          { label: 'Earned From Network', value: `$${data.totalFromNetwork.toFixed(2)}`, icon: TrendingUp, color: '#22d3ee' },
           { label: 'Network Depth', value: '10 levels', icon: ChevronDown, color: '#3b82f6' },
         ].map((s, i) => (
           <div key={i} className="stat-card rounded-2xl p-5">
