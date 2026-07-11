@@ -49,6 +49,15 @@ function RegisterForm() {
   async function handleConnectClick() {
     setError('');
     if (!validate()) return;
+
+    setLoading(true);
+    const res = await fetch('/api/auth/check-availability', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: form.name, email: form.email }),
+    });
+    setLoading(false);
+    if (!res.ok) { const d = await res.json(); setError(d.error); return; }
+
     pendingForm.current = { ...form };
 
     if (wallet.address) {
