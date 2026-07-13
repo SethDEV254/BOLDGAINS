@@ -54,7 +54,7 @@ export default function DashboardPage() {
   const STATS = [
     {
       label: 'Wallet Balance', value: `$${user.walletBalance.toFixed(2)}`,
-      icon: Wallet, color: '#f59e0b', sub: 'Available to withdraw',
+      icon: Wallet, color: '#f59e0b', sub: 'Available balance',
     },
     {
       label: 'Total Earned', value: `$${user.totalEarned.toFixed(2)}`,
