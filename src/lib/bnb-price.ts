@@ -7,10 +7,13 @@ export async function getBnbPrice(): Promise<number> {
   try {
     const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT');
     const data = await res.json();
-    cachedPrice = parseFloat(data.price);
+    const price = parseFloat(data.price);
+    if (!Number.isFinite(price)) throw new Error(`Bad price response: ${JSON.stringify(data)}`);
+    cachedPrice = price;
     cacheTime = now;
     return cachedPrice;
-  } catch {
+  } catch (err) {
+    console.error('[bnb-price] fetch failed, using fallback:', err);
     return cachedPrice || 600;
   }
 }
