@@ -18,3 +18,7 @@ export async function getBnbPrice(): Promise<number> {
 export function usdToBnb(usd: number, bnbPrice: number): number {
   return usd / bnbPrice;
 }
+
+export function bnbToUsd(bnb: number, bnbPrice: number): number {
+  return bnb * bnbPrice;
+}

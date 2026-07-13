@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { setUserStatus, adminSetPackage, adminAdjustBalance, deleteUser, getUserById } from '@/lib/db';
+import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
 
 async function guard() {
   const session = await getSession();
@@ -29,7 +30,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ success: true });
   }
   if (body.action === 'adjust_balance' && body.amount !== undefined) {
-    await adminAdjustBalance(userId, body.amount, session.userId, body.reason || 'Manual adjustment');
+    // body.amount is USD (matches the "$" the admin UI shows) — wallet_balance is BNB
+    const bnbPrice = await getBnbPrice();
+    const amountBnb = usdToBnb(body.amount, bnbPrice);
+    await adminAdjustBalance(userId, amountBnb, session.userId, body.reason || 'Manual adjustment');
     return NextResponse.json({ success: true });
   }
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getDirectDownlines, getUserById, getNetworkStats, getEarningsBySource } from '@/lib/db';
 import { getPackageByLevel } from '@/lib/packages';
+import { getBnbPrice, bnbToUsd } from '@/lib/bnb-price';
 
 async function buildTree(userId: number, earningsBySource: Record<number, number>, depth = 0): Promise<any[]> {
   if (depth > 3) return [];
@@ -18,17 +19,18 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const [user, stats, earningsBySourceRows] = await Promise.all([
+  const [user, stats, earningsBySourceRows, bnbPrice] = await Promise.all([
     getUserById(session.userId),
     getNetworkStats(session.userId),
     getEarningsBySource(session.userId),
+    getBnbPrice(),
   ]);
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const earningsBySource: Record<number, number> = {};
   let totalFromNetwork = 0;
   for (const row of earningsBySourceRows) {
-    const amount = Number(row.total);
+    const amount = bnbToUsd(Number(row.total), bnbPrice);
     earningsBySource[row.source_user_id] = amount;
     totalFromNetwork += amount;
   }
