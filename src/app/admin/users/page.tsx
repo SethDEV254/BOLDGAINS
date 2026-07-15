@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Loader2, Search, ChevronDown, Ban, CheckCircle, Wallet, Package, Trash2, X, Check, AlertTriangle, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { Users, Loader2, Search, ChevronDown, Ban, CheckCircle, Wallet, Package, Trash2, X, Check, AlertTriangle, UserPlus } from 'lucide-react';
 import { PACKAGES } from '@/lib/packages';
 
 type User = {
-  id: number; name: string; email: string;
+  id: number; name: string; email: string | null;
   package_level: number; wallet_balance: number; total_earned: number;
   status: string; role: string; sponsor_name?: string; bsc_address?: string; created_at: string;
 };
@@ -29,8 +29,7 @@ export default function AdminUsersPage() {
   const [newPkg, setNewPkg] = useState(0);
   const [working, setWorking] = useState(false);
   const [toast, setToast] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [regForm, setRegForm] = useState({ name: '', email: '', password: '', sponsorWallet: '', packageLevel: 1, bscAddress: '' });
+  const [regForm, setRegForm] = useState({ name: '', sponsorWallet: '', packageLevel: 1, bscAddress: '' });
 
   function showToast(msg: string) {
     setToast(msg);
@@ -56,7 +55,7 @@ export default function AdminUsersPage() {
     const d = await r.json();
     if (!r.ok) { showToast(`Error: ${d.error}`); setWorking(false); return; }
     showToast(`Member "${regForm.name}" registered successfully`);
-    setRegForm({ name: '', email: '', password: '', sponsorWallet: '', packageLevel: 1, bscAddress: '' });
+    setRegForm({ name: '', sponsorWallet: '', packageLevel: 1, bscAddress: '' });
     await load();
     setModal(null);
     setWorking(false);
@@ -281,26 +280,10 @@ export default function AdminUsersPage() {
                       className="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="John Doe" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1.5 block">Email Address</label>
-                    <input required type="email" value={regForm.email} onChange={e => setRegForm(f => ({ ...f, email: e.target.value }))}
-                      className="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="john@example.com" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400 mb-1.5 block">Password</label>
-                    <div className="relative">
-                      <input required type={showPw ? 'text' : 'password'} value={regForm.password}
-                        onChange={e => setRegForm(f => ({ ...f, password: e.target.value }))}
-                        className="input-dark w-full px-4 py-3 pr-11 rounded-xl text-sm" placeholder="Min. 6 characters" />
-                      <button type="button" onClick={() => setShowPw(v => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors">
-                        {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400 mb-1.5 block">BSC Wallet Address (optional)</label>
-                    <input value={regForm.bscAddress} onChange={e => setRegForm(f => ({ ...f, bscAddress: e.target.value }))}
+                    <label className="text-xs text-gray-400 mb-1.5 block">BSC Wallet Address</label>
+                    <input required value={regForm.bscAddress} onChange={e => setRegForm(f => ({ ...f, bscAddress: e.target.value }))}
                       className="input-dark w-full px-4 py-3 rounded-xl text-sm font-mono" placeholder="0x..." />
+                    <p className="text-[11px] text-gray-600 mt-1">Required — this is how they'll sign in, there's no password.</p>
                   </div>
                   <div>
                     <label className="text-xs text-gray-400 mb-1.5 block">Sponsor Wallet (optional)</label>

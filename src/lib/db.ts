@@ -95,12 +95,6 @@ async function getDb() {
   return _sql();
 }
 
-export async function getUserByEmail(email: string) {
-  const sql = await getDb();
-  const rows = await sql`SELECT * FROM users WHERE LOWER(email) = LOWER(${email})`;
-  return rows[0] || null;
-}
-
 export async function getUserByName(name: string) {
   const sql = await getDb();
   const rows = await sql`SELECT * FROM users WHERE LOWER(name) = LOWER(${name})`;
@@ -123,22 +117,6 @@ export async function getUserByBscAddress(address: string) {
   const sql = await getDb();
   const rows = await sql`SELECT * FROM users WHERE LOWER(bsc_address) = LOWER(${address})`;
   return rows[0] || null;
-}
-
-export async function createUser(data: {
-  name: string; email: string; passwordHash: string;
-  referralCode: string; sponsorId?: number; packageLevel: number; bscAddress?: string;
-  status?: string;
-}) {
-  const sql = await getDb();
-  const status = data.status ?? 'pending';
-  const rows = await sql`
-    INSERT INTO users (name, email, password_hash, referral_code, sponsor_id, package_level, bsc_address, status)
-    VALUES (${data.name}, ${data.email}, ${data.passwordHash}, ${data.referralCode},
-            ${data.sponsorId ?? null}, ${data.packageLevel}, ${data.bscAddress ?? null}, ${status})
-    RETURNING id
-  `;
-  return rows[0].id as number;
 }
 
 export async function createWalletUser(data: {

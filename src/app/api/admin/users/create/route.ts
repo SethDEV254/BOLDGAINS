@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { getSession } from '@/lib/auth';
-import { getUserByEmail, getUserByBscAddress, createUser } from '@/lib/db';
+import { getUserByName, getUserByBscAddress, createWalletUser } from '@/lib/db';
 import { generateReferralCode } from '@/lib/auth';
 import { PACKAGES } from '@/lib/packages';
 
@@ -10,13 +9,17 @@ export async function POST(req: NextRequest) {
   if (!session || session.role !== 'admin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { name, email, password, sponsorWallet, packageLevel, bscAddress } = await req.json();
+  const { name, bscAddress, sponsorWallet, packageLevel } = await req.json();
 
-  if (!name || !email || !password)
-    return NextResponse.json({ error: 'Name, email and password are required' }, { status: 400 });
+  if (!name || !bscAddress)
+    return NextResponse.json({ error: 'Name and wallet address are required' }, { status: 400 });
+  if (!/^0x[0-9a-fA-F]{40}$/.test(bscAddress))
+    return NextResponse.json({ error: 'Invalid wallet address' }, { status: 400 });
 
-  if (await getUserByEmail(email))
-    return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+  if (await getUserByBscAddress(bscAddress))
+    return NextResponse.json({ error: 'Wallet already registered' }, { status: 409 });
+  if (await getUserByName(name))
+    return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
 
   PACKAGES.find(p => p.level === (packageLevel || 0));
   let sponsorId: number | undefined;
@@ -29,15 +32,13 @@ export async function POST(req: NextRequest) {
     sponsorId = sponsor.id;
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  const internalCode = generateReferralCode(name);
+  const referralCode = generateReferralCode(name);
 
-  const userId = await createUser({
-    name, email, passwordHash,
-    referralCode: internalCode,
+  const userId = await createWalletUser({
+    name, bscAddress,
+    referralCode,
     sponsorId,
     packageLevel: packageLevel || 0,
-    bscAddress: bscAddress || undefined,
     status: 'active',
   });
 
