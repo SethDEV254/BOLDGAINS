@@ -250,9 +250,6 @@ export default function LandingPage() {
                 ? <><Loader2 className="w-5 h-5 animate-spin" /> Connecting…</>
                 : <><Wallet className="w-5 h-5" /> Connect Wallet &amp; Join</>}
             </button>
-            <Link href="/login" className="btn-ghost flex items-center gap-3 px-10 py-4 rounded-2xl text-sm font-semibold w-full sm:w-auto justify-center">
-              Member Login
-            </Link>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-px overflow-hidden rounded-2xl"
