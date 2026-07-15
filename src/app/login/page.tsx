@@ -17,6 +17,12 @@ function LoginForm() {
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState('');
 
+  // wagmi's isConnecting can flip true on the client during auto-reconnect before the
+  // server ever sees it — gate on mount so the first client render matches SSR exactly.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const connecting = mounted && wallet.connecting;
+
   async function handleSignIn() {
     setError('');
     setStep('signing');
@@ -61,7 +67,7 @@ function LoginForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet.address, wallet.isReady, step]);
 
-  const isBusy = step !== 'idle' || wallet.connecting;
+  const isBusy = step !== 'idle' || connecting;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: '#000000' }}>
@@ -92,7 +98,7 @@ function LoginForm() {
 
           <button type="button" onClick={handleConnectClick} disabled={isBusy}
             className="btn-gold w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-base">
-            {step === 'connecting' || wallet.connecting ? (
+            {step === 'connecting' || connecting ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> Connecting Wallet…</>
             ) : step === 'signing' ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> Confirm in Wallet…</>

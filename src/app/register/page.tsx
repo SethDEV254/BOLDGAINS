@@ -27,6 +27,12 @@ function RegisterForm() {
 
   const pendingForm = useRef<typeof form | null>(null);
 
+  // wagmi's isConnecting can flip true on the client during auto-reconnect before the
+  // server ever sees it — gate on mount so the first client render matches SSR exactly.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const connecting = mounted && wallet.connecting;
+
   useEffect(() => { getBnbPrice().then(p => { setBnbPrice(p); setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, p)); }); }, []);
 
   async function proceedToConfirm() {
@@ -120,7 +126,7 @@ function RegisterForm() {
     }
   }
 
-  const isBusy = loading || step === 'paying' || wallet.connecting;
+  const isBusy = loading || step === 'paying' || connecting;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 relative" style={{ background: '#000000' }}>
@@ -236,7 +242,7 @@ function RegisterForm() {
 
                 <button type="button" onClick={handleConnectClick} disabled={isBusy}
                   className="btn-gold w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-base mt-2">
-                  {wallet.connecting || step === 'connecting' ? (
+                  {connecting || step === 'connecting' ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> Connecting Wallet…</>
                   ) : wallet.address ? (
                     <><Check className="w-5 h-5" /> Review &amp; Pay ${REGISTRATION_FEE_GROSS}</>
@@ -245,7 +251,7 @@ function RegisterForm() {
                   )}
                 </button>
 
-                {(step === 'connecting' || wallet.connecting) && (
+                {(step === 'connecting' || connecting) && (
                   <button type="button"
                     onClick={() => { setStep('form'); pendingForm.current = null; }}
                     className="w-full py-2 rounded-xl text-xs font-semibold transition-all"
