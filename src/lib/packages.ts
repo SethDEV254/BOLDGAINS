@@ -26,9 +26,8 @@ export const PACKAGES: Package[] = [
 // Fixed one-time fee paid at registration (no package assigned)
 export const REGISTRATION_FEE = 10; // $10 USD base registration fee
 export const REGISTRATION_FEE_GROSS = 11; // $10 + 10% fee = $11 USD paid in BNB
-// Split enforced on-chain by the contract (REGISTRATION_REFERRAL_BPS) — 50% of the
-// registration fee goes straight to the direct referrer's wallet in the same tx;
-// the rest stays in the contract. No off-chain distribution needed for this.
+// 50% of the registration fee is paid to the direct referrer on-chain (operator payout,
+// see src/lib/payout.ts) right after registration; the rest stays in the contract.
 export const REGISTRATION_REFERRAL_RATE = 0.50;
 
 // Minimum withdrawal net amount in USD

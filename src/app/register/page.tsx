@@ -94,7 +94,7 @@ function RegisterForm() {
       }
 
       const price = bnbPrice || await getBnbPrice();
-      const hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), walletAddr, refWallet || undefined);
+      const hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), walletAddr);
 
       const res = await fetch('/api/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -174,7 +174,7 @@ function RegisterForm() {
                   ['Base registration', `$${REGISTRATION_FEE} USD`],
                   ['Platform fee (10%)', `$${(REGISTRATION_FEE * 0.1).toFixed(2)} USD`],
                   ['Total (net)', `$${REGISTRATION_FEE_GROSS} USD`],
-                  ...(refWallet ? [['Referral split', '50% sent on-chain to your referrer, instantly']] : []),
+                  ...(refWallet ? [['Referral bonus', '50% paid to your referrer on-chain after registration']] : []),
                   ['You will pay', bnbAmount ? `${bnbAmount.toFixed(6)} BNB` : 'calculating…'],
                 ].map(([label, val], i, arr) => (
                   <div key={i} className="flex items-center justify-between px-4 py-3"

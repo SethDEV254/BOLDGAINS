@@ -2,14 +2,16 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import { cookies } from 'next/headers';
 import {
   getUserByName, getUserByBscAddress, createWalletUser,
-  createTransaction, getTransactionByReference, recordEarning,
+  createTransaction, getTransactionByReference,
 } from '@/lib/db';
 import { createSession, generateReferralCode } from '@/lib/auth';
 import { isAdminAddress } from '@/lib/admin';
+import { REGISTRATION_REFERRAL_RATE } from '@/lib/packages';
+import { distributePayouts, type PayoutItem } from '@/lib/payout';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, bscAddress, txHash } = await req.json();
+    const { name, bscAddress, refWallet, txHash } = await req.json();
 
     if (!name || !bscAddress || !txHash)
       return NextResponse.json({ error: 'All fields required' }, { status: 400 });
@@ -27,10 +29,15 @@ export async function POST(req: NextRequest) {
     if (await getTransactionByReference(txHash))
       return NextResponse.json({ error: 'Transaction already used' }, { status: 409 });
 
-    let verifiedGross = 0, referrerAmount = 0, contractAmount = 0, onChainReferrer = '';
+    let sponsor: any = null;
+    if (refWallet && /^0x[0-9a-fA-F]{40}$/.test(refWallet)) {
+      sponsor = await getUserByBscAddress(refWallet);
+    }
+
+    let verifiedGross = 0, verifiedFee = 0, verifiedNet = 0;
 
     try {
-      const { JsonRpcProvider, Interface, formatUnits, ZeroAddress } = await import('ethers');
+      const { JsonRpcProvider, Interface, formatUnits } = await import('ethers');
       const { BSC_RPC, CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
 
       const provider = new JsonRpcProvider(BSC_RPC);
@@ -54,18 +61,13 @@ export async function POST(req: NextRequest) {
 
       if (!log) return NextResponse.json({ error: 'RegistrationFeePaid event not found' }, { status: 400 });
 
-      verifiedGross   = parseFloat(formatUnits(log.args.gross, 18));
-      referrerAmount  = parseFloat(formatUnits(log.args.referrerAmount, 18));
-      contractAmount  = parseFloat(formatUnits(log.args.contractAmount, 18));
-      onChainReferrer = log.args.referrer as string;
-      if (onChainReferrer === ZeroAddress) onChainReferrer = '';
+      verifiedGross = parseFloat(formatUnits(log.args.gross, 18));
+      verifiedFee   = parseFloat(formatUnits(log.args.fee,   18));
+      verifiedNet   = parseFloat(formatUnits(log.args.net,   18));
     } catch (err) {
       console.error('[register verify]', err);
       return NextResponse.json({ error: 'Failed to verify transaction on BSC' }, { status: 500 });
     }
-
-    // The referrer credited on-chain is the source of truth — not the client-supplied refWallet.
-    const sponsor = onChainReferrer ? await getUserByBscAddress(onChainReferrer) : null;
 
     const newReferralCode = generateReferralCode(name);
     const role = isAdminAddress(bscAddress) ? 'admin' : 'member';
@@ -81,19 +83,23 @@ export async function POST(req: NextRequest) {
 
     await createTransaction({
       userId, type: 'registration',
-      amount: verifiedGross, fee: referrerAmount, netAmount: contractAmount,
+      amount: verifiedGross, fee: verifiedFee, netAmount: verifiedNet,
       description: 'Registration fee',
       reference: txHash,
     });
 
-    // Referral commission (50%) was already paid on-chain, atomically, in the same tx —
-    // just record it for the sponsor's earnings history (no wallet_balance credit, funds
-    // went straight to their own wallet, not the platform balance).
-    if (sponsor && referrerAmount > 0) {
-      after(() => recordEarning(
-        sponsor.id, 'referral_direct', referrerAmount, userId,
-        `Registration referral (on-chain, 50%) — ${name} registered`,
-      ));
+    // 50% of the registration fee to the direct referrer, paid on-chain via the operator
+    // wallet (same mechanism as every other bonus payout); the rest stays in the contract.
+    if (sponsor) {
+      const items: PayoutItem[] = [{
+        userId: sponsor.id,
+        amount: verifiedGross * REGISTRATION_REFERRAL_RATE,
+        type: 'referral_direct',
+        description: `Registration referral (50%) — ${name} registered`,
+        sourceUserId: userId,
+      }];
+
+      after(() => distributePayouts(items));
     }
 
     const token = await createSession({

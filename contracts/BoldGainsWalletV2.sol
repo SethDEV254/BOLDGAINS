@@ -25,7 +25,6 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
     // ── Constants ────────────────────────────────────────────────────────────
 
     uint256 public constant FEE_BPS          = 1000;          // 10%
-    uint256 public constant REGISTRATION_REFERRAL_BPS = 5000; // 50% of registration fee to direct referrer
     uint256 public constant MAX_BATCH        = 200;           // max recipients per batchPayout
     uint256 public constant MIN_DEPOSIT      = 0.001 ether;   // ~$0.50 — blocks dust spam
     uint256 public constant DAILY_CAP        = 500 ether;     // max outbound BNB per 24 h
@@ -44,7 +43,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
     // ── Events ───────────────────────────────────────────────────────────────
 
     event OperatorChanged(address indexed previous, address indexed next);
-    event RegistrationFeePaid(address indexed from, string userId, address indexed referrer, uint256 gross, uint256 referrerAmount, uint256 contractAmount);
+    event RegistrationFeePaid(address indexed from, string userId, uint256 gross, uint256 fee, uint256 net);
     event UpgradeFeePaid(address indexed from, string userId, uint8 packageLevel, uint256 gross, uint256 fee, uint256 net);
     event Deposited(address indexed from, string userId, uint256 gross, uint256 fee, uint256 net);
     event DirectReceived(address indexed from, uint256 amount);
@@ -76,10 +75,7 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
 
     // ── User payable actions (blocked when paused) ───────────────────────────
 
-    /// @notice Pays the registration fee. If `referrer` is a valid non-self address,
-    ///         50% of the fee is sent directly to them on-chain; the rest stays in
-    ///         the contract. With no valid referrer, the full amount stays in the contract.
-    function payRegistrationFee(string calldata userId, address referrer)
+    function payRegistrationFee(string calldata userId)
         external
         payable
         nonReentrant
@@ -89,17 +85,11 @@ contract BoldGainsWalletV2 is Ownable2Step, ReentrancyGuard, Pausable {
         uint256 gross = msg.value;
         require(gross >= MIN_DEPOSIT, "Below minimum");
 
-        address ref = (referrer != address(0) && referrer != msg.sender) ? referrer : address(0);
-        uint256 referrerAmount = ref != address(0) ? (gross * REGISTRATION_REFERRAL_BPS) / 10000 : 0;
-        uint256 contractAmount = gross - referrerAmount;
+        // Effects before Events (CEI)
+        uint256 fee = (gross * FEE_BPS) / 10000;
+        accumulatedFees += fee;
 
-        // Interaction before event (event reflects final outcome; whole tx reverts on failure)
-        if (referrerAmount > 0) {
-            (bool ok,) = ref.call{value: referrerAmount}("");
-            require(ok, "Referrer transfer failed");
-        }
-
-        emit RegistrationFeePaid(msg.sender, userId, ref, gross, referrerAmount, contractAmount);
+        emit RegistrationFeePaid(msg.sender, userId, gross, fee, gross - fee);
     }
 
     function op2(string calldata userId, uint8 packageLevel)

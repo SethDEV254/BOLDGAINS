@@ -89,7 +89,7 @@ export default function SettingsPage() {
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">Platform Rates</p>
             <InfoRow label="Registration Fee (gross)" value={`$${REGISTRATION_FEE_GROSS} USD`} color="#f59e0b" />
             <InfoRow label="Registration Base" value={`$${REGISTRATION_FEE} USD`} color="#9ca3af" />
-            <InfoRow label="Referral (on-chain, instant)" value={`${(REGISTRATION_REFERRAL_RATE * 100).toFixed(0)}%`} color="#22d3ee" />
+            <InfoRow label="Referral (on-chain payout)" value={`${(REGISTRATION_REFERRAL_RATE * 100).toFixed(0)}%`} color="#22d3ee" />
             <InfoRow label="Platform Fee (deposit)" value={`${(BONUS_RATES.management_fee_deposit * 100).toFixed(0)}%`} color="#f87171" />
             <InfoRow label="Withdrawal Fee" value="None" color="#34d399" />
             <InfoRow label="Upgrade Bonus" value={`${(BONUS_RATES.upgrade_bonus * 100).toFixed(0)}%`} color="#34d399" />
