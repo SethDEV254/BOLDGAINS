@@ -21,7 +21,6 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'BOLD GAINS — Build Your Empire',
   description: 'Premium network marketing platform. Earn, grow, and succeed with Bold Gains.',
-  icons: { icon: '/logo.jpeg' },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
