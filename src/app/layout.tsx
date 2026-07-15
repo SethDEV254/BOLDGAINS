@@ -26,6 +26,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+      <head>
+        {/* Warm up the wallet-connect modal's external hosts (wallet list, icons, fonts)
+            ahead of the click, instead of paying full DNS+TLS handshake cost then. */}
+        <link rel="preconnect" href="https://api.web3modal.org" />
+        <link rel="preconnect" href="https://fonts.reown.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.web3modal.org" />
+        <link rel="dns-prefetch" href="https://fonts.reown.com" />
+      </head>
       <body className="min-h-screen antialiased" style={{ background: '#000000', color: '#f0f0f0' }}>
         <Web3Provider>
           <PrismStars />
