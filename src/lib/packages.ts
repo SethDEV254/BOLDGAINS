@@ -26,9 +26,10 @@ export const PACKAGES: Package[] = [
 // Fixed one-time fee paid at registration (no package assigned)
 export const REGISTRATION_FEE = 10; // $10 USD base registration fee
 export const REGISTRATION_FEE_GROSS = 11; // $10 + 10% fee = $11 USD paid in BNB
-export const REGISTRATION_REFERRAL_DIRECT_RATE = 0.30; // 30% of base fee to direct sponsor
-export const REGISTRATION_REFERRAL_INDIRECT_RATE = 0.15; // 15% of base fee to indirect (level-2) sponsor
-// remaining 5% of the base fee stays in the contract as liquidity
+// Split enforced on-chain by the contract (REGISTRATION_REFERRAL_BPS) — 50% of the
+// registration fee goes straight to the direct referrer's wallet in the same tx;
+// the rest stays in the contract. No off-chain distribution needed for this.
+export const REGISTRATION_REFERRAL_RATE = 0.50;
 
 // Minimum withdrawal net amount in USD
 export const MIN_WITHDRAWAL_NET_USD = 10;

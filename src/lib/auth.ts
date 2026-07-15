@@ -11,7 +11,7 @@ const COOKIE_NAME = 'bg_session';
 
 export interface SessionPayload {
   userId: number;
-  email: string;
+  address: string;
   role: string;
   name: string;
 }

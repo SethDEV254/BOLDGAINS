@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail, getUserByName } from '@/lib/db';
+import { getUserByName, getUserByBscAddress } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
-  const { name, email } = await req.json();
-
-  if (email && await getUserByEmail(email))
-    return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+  const { name, bscAddress } = await req.json();
 
   if (name && await getUserByName(name))
     return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
+
+  if (bscAddress && await getUserByBscAddress(bscAddress))
+    return NextResponse.json({ error: 'Wallet already registered — sign in instead' }, { status: 409 });
 
   return NextResponse.json({ ok: true });
 }

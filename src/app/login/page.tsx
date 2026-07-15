@@ -2,39 +2,66 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
-import { Suspense } from 'react';
+import { Wallet, Loader2, Check } from 'lucide-react';
+import { useWallet } from '@/hooks/use-wallet';
+
+type Step = 'idle' | 'connecting' | 'signing';
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const wallet = useWallet();
+
+  const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState('');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  async function handleSignIn() {
     setError('');
+    setStep('signing');
     try {
-      const res = await fetch('/api/auth/login', {
+      const address = wallet.address!;
+
+      const nonceRes = await fetch('/api/auth/nonce', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ address }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
+      const nonceData = await nonceRes.json();
+      if (!nonceRes.ok) { setError(nonceData.error || 'Failed to start sign-in'); setStep('idle'); return; }
+
+      const signature = await wallet.signMessage(nonceData.message);
+
+      const verifyRes = await fetch('/api/auth/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, signature }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) { setError(verifyData.error || 'Sign-in failed'); setStep('idle'); return; }
+
       const redirect = params.get('redirect');
       if (redirect) { router.push(`/${redirect}`); return; }
-      router.push(data.role === 'admin' ? '/admin' : '/dashboard');
-    } catch {
-      setError('Connection error. Try again.');
-    } finally {
-      setLoading(false);
+      router.push(verifyData.role === 'admin' ? '/admin' : '/dashboard');
+    } catch (e: any) {
+      setError(e?.shortMessage || e?.message || 'Sign-in failed');
+      setStep('idle');
     }
   }
+
+  function handleConnectClick() {
+    setError('');
+    if (wallet.address && wallet.isReady) { handleSignIn(); return; }
+    setStep('connecting');
+    wallet.open();
+  }
+
+  // Once the wallet finishes connecting after a click, trigger the signature step.
+  useEffect(() => {
+    if (wallet.address && wallet.isReady && step === 'connecting') handleSignIn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet.address, wallet.isReady, step]);
+
+  const isBusy = step !== 'idle' || wallet.connecting;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: '#000000' }}>
@@ -50,53 +77,41 @@ function LoginForm() {
               style={{ boxShadow: '0 0 40px rgba(255,140,0,0.3)', border: '2px solid rgba(255,140,0,0.25)' }} />
           </Link>
           <h1 className="text-3xl font-black gold-gradient">Welcome Back</h1>
-          <p className="text-gray-400 mt-2">Sign in to your Bold Gains account</p>
+          <p className="text-gray-400 mt-2">Sign in with your BSC wallet</p>
           <Link href="/" className="inline-flex items-center gap-1.5 mt-3 text-xs text-gray-500 hover:text-amber-500 transition-colors">
             ← Back to Home
           </Link>
         </div>
 
         <div className="glass rounded-3xl p-8 gold-border-glow">
-          {params.get('registered') && (
-            <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm text-center">
-              Account created! Sign in to get started.
-            </div>
-          )}
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-              <input type="email" required value={form.email}
-                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                className="input-dark w-full px-4 py-3 rounded-xl text-sm"
-                placeholder="you@example.com" />
-            </div>
+          <button type="button" onClick={handleConnectClick} disabled={isBusy}
+            className="btn-gold w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-base">
+            {step === 'connecting' || wallet.connecting ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Connecting Wallet…</>
+            ) : step === 'signing' ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Confirm in Wallet…</>
+            ) : wallet.address ? (
+              <><Check className="w-5 h-5" /> Sign In</>
+            ) : (
+              <><Wallet className="w-5 h-5" /> Connect Wallet to Sign In</>
+            )}
+          </button>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
-              <div className="relative">
-                <input type={showPw ? 'text' : 'password'} required value={form.password}
-                  onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                  className="input-dark w-full px-4 py-3 pr-12 rounded-xl text-sm"
-                  placeholder="••••••••" />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-amber-400 transition-colors">
-                  {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
+          {wallet.address && (
+            <p className="text-center text-xs text-emerald-400 mt-4">
+              Connected: {wallet.address.slice(0, 8)}…{wallet.address.slice(-6)}
+            </p>
+          )}
 
-            <button type="submit" disabled={loading}
-              className="btn-gold w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-base">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
+          <p className="text-center text-xs text-gray-600 mt-4">
+            Supports MetaMask, WalletConnect, Trust Wallet &amp; 400+ wallets
+          </p>
 
           <div className="mt-6 text-center">
             <p className="text-gray-500 text-sm">

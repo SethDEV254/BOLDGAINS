@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
 
   const filtered = users.filter(u => {
     const s = search.toLowerCase();
-    const matchSearch = u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s) || (u.bsc_address || '').toLowerCase().includes(s);
+    const matchSearch = u.name.toLowerCase().includes(s) || (u.email || '').toLowerCase().includes(s) || (u.bsc_address || '').toLowerCase().includes(s);
     const matchPkg = filterPkg === 0 || u.package_level === filterPkg;
     const matchStatus = filterStatus === 'all' || u.status === filterStatus;
     return matchSearch && matchPkg && matchStatus;
@@ -175,7 +175,9 @@ export default function AdminUsersPage() {
                         </div>
                         <div>
                           <p className="text-white font-medium whitespace-nowrap">{u.name}</p>
-                          <p className="text-gray-600 text-xs">{u.email}</p>
+                          <p className="text-gray-600 text-xs">
+                            {u.email || (u.bsc_address ? `${u.bsc_address.slice(0, 6)}…${u.bsc_address.slice(-4)}` : '—')}
+                          </p>
                         </div>
                       </div>
                     </td>

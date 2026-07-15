@@ -50,7 +50,7 @@ export default function AdminPage() {
   const stats = data.stats ?? {};
   const filtered = users.filter((u: any) =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
     (u.bsc_address || '').toLowerCase().includes(search.toLowerCase())
   );
 
@@ -137,7 +137,7 @@ export default function AdminPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-gray-400">{u.email}</td>
+                    <td className="py-3 px-3 text-gray-400">{u.email || '—'}</td>
                     <td className="py-3 px-3">
                       {pkg ? (
                         <span className="text-xs font-bold px-2 py-1 rounded-full"

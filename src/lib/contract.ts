@@ -15,7 +15,7 @@ export const BSC_RPC_LIST = process.env.BSC_RPC_URL
 
 export const CONTRACT_ABI = [
   // User actions (payable — send BNB as msg.value; blocked when paused)
-  'function payRegistrationFee(string calldata userId) external payable',
+  'function payRegistrationFee(string calldata userId, address referrer) external payable',
   'function op2(string calldata userId, uint8 packageLevel) external payable', // payUpgradeFee
   'function op3(string calldata userId) external payable', // deposit
   // Owner-only config
@@ -36,7 +36,7 @@ export const CONTRACT_ABI = [
   'function owner() view returns (address)',
   'function operator() view returns (address)',
   // Events
-  'event RegistrationFeePaid(address indexed from, string userId, uint256 gross, uint256 fee, uint256 net)',
+  'event RegistrationFeePaid(address indexed from, string userId, address indexed referrer, uint256 gross, uint256 referrerAmount, uint256 contractAmount)',
   'event UpgradeFeePaid(address indexed from, string userId, uint8 packageLevel, uint256 gross, uint256 fee, uint256 net)',
   'event Deposited(address indexed from, string userId, uint256 gross, uint256 fee, uint256 net)',
   'event PayoutSent(address indexed to, uint256 amount, string ref)',

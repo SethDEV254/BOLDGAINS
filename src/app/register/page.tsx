@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, Suspense, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Loader2, AlertCircle, Check, Wallet, ShieldCheck } from 'lucide-react';
+import { Loader2, AlertCircle, Check, Wallet, ShieldCheck } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
 import { REGISTRATION_FEE, REGISTRATION_FEE_GROSS } from '@/lib/packages';
 import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
@@ -18,8 +18,7 @@ function RegisterForm() {
 
   const refWallet = params.get('ref') || '';
 
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
-  const [showPw, setShowPw] = useState(false);
+  const [form, setForm] = useState({ name: '' });
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,19 +29,29 @@ function RegisterForm() {
 
   useEffect(() => { getBnbPrice().then(p => { setBnbPrice(p); setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, p)); }); }, []);
 
+  async function proceedToConfirm() {
+    const price = bnbPrice || await getBnbPrice();
+    setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, price));
+
+    const res = await fetch('/api/auth/check-availability', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bscAddress: wallet.address }),
+    });
+    if (!res.ok) { const d = await res.json(); setError(d.error); setStep('form'); return; }
+
+    setStep('confirm');
+  }
+
   // After wallet connects during 'connecting' step, move to confirm
   useEffect(() => {
     if (wallet.address && step === 'connecting' && pendingForm.current) {
-      const price = bnbPrice;
-      if (price) setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, price));
-      setStep('confirm');
+      proceedToConfirm();
     }
-  }, [wallet.address, step, bnbPrice]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet.address, step]);
 
   function validate() {
     if (!form.name.trim()) { setError('Username is required'); return false; }
-    if (!form.email.trim()) { setError('Email address is required'); return false; }
-    if (!form.password || form.password.length < 6) { setError('Password must be at least 6 characters'); return false; }
     return true;
   }
 
@@ -53,7 +62,7 @@ function RegisterForm() {
     setLoading(true);
     const res = await fetch('/api/auth/check-availability', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: form.name, email: form.email }),
+      body: JSON.stringify({ name: form.name }),
     });
     setLoading(false);
     if (!res.ok) { const d = await res.json(); setError(d.error); return; }
@@ -61,9 +70,7 @@ function RegisterForm() {
     pendingForm.current = { ...form };
 
     if (wallet.address) {
-      const price = bnbPrice || await getBnbPrice();
-      setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, price));
-      setStep('confirm');
+      await proceedToConfirm();
       return;
     }
 
@@ -87,11 +94,11 @@ function RegisterForm() {
       }
 
       const price = bnbPrice || await getBnbPrice();
-      const hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), saved.email);
+      const hash = await wallet.payRegistrationFee(usdToBnb(REGISTRATION_FEE_GROSS, price), walletAddr, refWallet || undefined);
 
       const res = await fetch('/api/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...saved, bscAddress: walletAddr, refWallet, txHash: hash }),
+        body: JSON.stringify({ name: saved.name, bscAddress: walletAddr, refWallet, txHash: hash }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error); setStep('form'); return; }
@@ -163,17 +170,17 @@ function RegisterForm() {
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 {[
                   ['Username', form.name],
-                  ['Email', form.email],
                   ['Wallet', `${wallet.address?.slice(0, 10)}…${wallet.address?.slice(-6)}`],
                   ['Base registration', `$${REGISTRATION_FEE} USD`],
                   ['Platform fee (10%)', `$${(REGISTRATION_FEE * 0.1).toFixed(2)} USD`],
                   ['Total (net)', `$${REGISTRATION_FEE_GROSS} USD`],
+                  ...(refWallet ? [['Referral split', '50% sent on-chain to your referrer, instantly']] : []),
                   ['You will pay', bnbAmount ? `${bnbAmount.toFixed(6)} BNB` : 'calculating…'],
-                ].map(([label, val], i) => (
+                ].map(([label, val], i, arr) => (
                   <div key={i} className="flex items-center justify-between px-4 py-3"
-                    style={{ borderBottom: i < 6 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                    style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                     <span className="text-xs text-gray-500">{label}</span>
-                    <span className={`text-sm font-semibold ${i === 6 ? 'text-amber-400' : 'text-white'}`}>{val}</span>
+                    <span className={`text-sm font-semibold ${i === arr.length - 1 ? 'text-amber-400' : 'text-white'}`}>{val}</span>
                   </div>
                 ))}
               </div>
@@ -216,28 +223,6 @@ function RegisterForm() {
                   <input type="text" value={form.name}
                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                     className="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="e.g. boldearner99" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-                  <input type="email" value={form.email}
-                    onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                    className="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="you@example.com" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                  <div className="relative">
-                    <input type={showPw ? 'text' : 'password'}
-                      value={form.password}
-                      onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                      className="input-dark w-full px-4 py-3 pr-12 rounded-xl text-sm"
-                      placeholder="Min. 6 characters" />
-                    <button type="button" onClick={() => setShowPw(!showPw)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-amber-400 transition-colors">
-                      {showPw ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
                 </div>
 
                 {refWallet && (

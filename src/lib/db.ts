@@ -1,5 +1,4 @@
 import { neon } from '@neondatabase/serverless';
-import bcrypt from 'bcryptjs';
 
 function _sql() {
   const url = process.env.DATABASE_URL;
@@ -19,8 +18,8 @@ async function ensureInit() {
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
+        email TEXT,
+        password_hash TEXT,
         referral_code TEXT UNIQUE NOT NULL,
         sponsor_id INTEGER,
         package_level INTEGER DEFAULT 0,
@@ -74,17 +73,16 @@ async function ensureInit() {
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member'`;
     await sql`UPDATE users SET status = 'active' WHERE status IS NULL`;
     await sql`ALTER TABLE earnings ADD COLUMN IF NOT EXISTS on_chain BOOLEAN DEFAULT false`;
+    await sql`ALTER TABLE users ALTER COLUMN email DROP NOT NULL`;
+    await sql`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`;
 
-    const admins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
-    if (admins.length === 0) {
-      const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD;
-      if (!adminPassword) throw new Error('ADMIN_DEFAULT_PASSWORD env var is not set');
-      const hash = await bcrypt.hash(adminPassword, 10);
+    try {
       await sql`
-        INSERT INTO users (name, email, password_hash, referral_code, role, package_level, wallet_balance)
-        VALUES ('Admin', 'admin@boldgains.com', ${hash}, 'ADMIN001', 'admin', 12, 0)
-        ON CONFLICT DO NOTHING
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_bsc_address_lower
+        ON users (LOWER(bsc_address)) WHERE bsc_address IS NOT NULL
       `;
+    } catch (err) {
+      console.error('[db] could not enforce unique bsc_address — check for duplicates', err);
     }
   } catch (err) {
     initialized = false; // allow retry on next request
@@ -138,6 +136,23 @@ export async function createUser(data: {
     INSERT INTO users (name, email, password_hash, referral_code, sponsor_id, package_level, bsc_address, status)
     VALUES (${data.name}, ${data.email}, ${data.passwordHash}, ${data.referralCode},
             ${data.sponsorId ?? null}, ${data.packageLevel}, ${data.bscAddress ?? null}, ${status})
+    RETURNING id
+  `;
+  return rows[0].id as number;
+}
+
+export async function createWalletUser(data: {
+  name: string; bscAddress: string;
+  referralCode: string; sponsorId?: number; packageLevel: number;
+  role?: string; status?: string;
+}) {
+  const sql = await getDb();
+  const status = data.status ?? 'active';
+  const role = data.role ?? 'member';
+  const rows = await sql`
+    INSERT INTO users (name, referral_code, sponsor_id, package_level, bsc_address, role, status)
+    VALUES (${data.name}, ${data.referralCode}, ${data.sponsorId ?? null},
+            ${data.packageLevel}, ${data.bscAddress}, ${role}, ${status})
     RETURNING id
   `;
   return rows[0].id as number;

@@ -2,7 +2,7 @@
 
 import { useAppKit } from '@reown/appkit/react';
 import { useAccount, useDisconnect, useBalance, useWalletClient, useSwitchChain } from 'wagmi';
-import { BrowserProvider, JsonRpcSigner, Contract, parseEther, formatUnits, Network } from 'ethers';
+import { BrowserProvider, JsonRpcSigner, Contract, parseEther, formatUnits, Network, ZeroAddress } from 'ethers';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '@/lib/contract';
 
 const BSC_CHAIN_ID = 56;
@@ -44,11 +44,11 @@ export function useWallet() {
     return getEthersSigner(walletClient);
   }
 
-  async function payRegistrationFee(amountBnb: number, userId: string): Promise<string> {
+  async function payRegistrationFee(amountBnb: number, userId: string, referrer?: string): Promise<string> {
     await ensureBSC();
     const signer = await getSigner();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-    const tx = await contract.payRegistrationFee(userId, { value: parseEther(amountBnb.toFixed(8)) });
+    const tx = await contract.payRegistrationFee(userId, referrer || ZeroAddress, { value: parseEther(amountBnb.toFixed(8)) });
     const receipt = await tx.wait();
     return receipt.hash;
   }
@@ -71,6 +71,11 @@ export function useWallet() {
     return receipt.hash;
   }
 
+  async function signMessage(message: string): Promise<string> {
+    const signer = await getSigner();
+    return signer.signMessage(message);
+  }
+
   return {
     open: openWallet,
     address: address ?? null,
@@ -84,5 +89,6 @@ export function useWallet() {
     payRegistrationFee,
     payUpgradeFee,
     deposit,
+    signMessage,
   };
 }
