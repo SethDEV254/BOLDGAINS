@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getAllTransactions, approveWithdrawal, rejectWithdrawal, getUserById } from '@/lib/db';
+import { getBnbPrice } from '@/lib/bnb-price';
 
 async function guard() {
   const s = await getSession();
@@ -30,17 +31,18 @@ export async function GET() {
     const { CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
 
     if (!CONTRACT_ADDRESS)
-      return NextResponse.json({ contractAddress: '', balance: '0', availableBalance: '0', hasOperator: false, paused: false });
+      return NextResponse.json({ contractAddress: '', balance: '0', availableBalance: '0', hasOperator: false, paused: false, bnbPrice: await getBnbPrice() });
 
     const provider = await getProvider();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-    const [balWei, availWei, isPaused, chainId, allTxs] = await Promise.all([
+    const [balWei, availWei, isPaused, chainId, allTxs, bnbPrice] = await Promise.all([
       provider.getBalance(CONTRACT_ADDRESS),
       contract.availableBalance().catch(() => BigInt(0)),
       contract.paused().catch(() => false),
       provider.getNetwork().then(n => n.chainId),
       getAllTransactions(500),
+      getBnbPrice(),
     ]);
 
     const opPk = process.env.OPERATOR_PRIVATE_KEY;
@@ -63,6 +65,7 @@ export async function GET() {
       paused: isPaused,
       chainId: Number(chainId),
       pendingWithdrawals,
+      bnbPrice,
     });
   } catch (e: any) {
     const msg = e?.message || e?.toString() || 'Unknown error';

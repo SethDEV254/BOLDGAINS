@@ -16,6 +16,7 @@ type ContractInfo = {
   paused: boolean;
   chainId: number;
   pendingWithdrawals: any[];
+  bnbPrice: number;
 };
 
 function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
@@ -74,7 +75,7 @@ export default function ContractPage() {
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-amber-400 animate-spin" /></div>;
   if (!info) return null;
 
-  const bnbPrice = 620;
+  const bnbPrice = info.bnbPrice;
   const balUsd  = parseFloat(info.balance) * bnbPrice;
   const availUsd = parseFloat(info.availableBalance) * bnbPrice;
 
