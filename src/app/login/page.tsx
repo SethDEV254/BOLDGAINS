@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Wallet, Loader2, Check } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
@@ -16,12 +16,42 @@ function LoginForm() {
 
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState('');
+  const [checkingSession, setCheckingSession] = useState(true);
 
   // wagmi's isConnecting can flip true on the client during auto-reconnect before the
   // server ever sees it — gate on mount so the first client render matches SSR exactly.
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const connecting = mounted && wallet.connecting;
+
+  // Already holding a valid session cookie (signed in within the last 7 days) —
+  // skip the wallet/signature flow entirely and go straight in.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/auth/session').then(r => r.json()).then(d => {
+      if (cancelled) return;
+      if (d.authenticated) {
+        const redirect = params.get('redirect');
+        router.replace(redirect ? `/${redirect}` : d.role === 'admin' ? '/admin' : '/dashboard');
+        return;
+      }
+      setCheckingSession(false);
+    }).catch(() => { if (!cancelled) setCheckingSession(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Wallet already reconnected in the background (wagmi's persisted cookie storage) —
+  // go straight to the signature prompt instead of waiting for another click.
+  const autoSignAttempted = useRef(false);
+  useEffect(() => {
+    if (checkingSession || autoSignAttempted.current) return;
+    if (wallet.address && wallet.isReady && step === 'idle') {
+      autoSignAttempted.current = true;
+      handleSignIn();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkingSession, wallet.address, wallet.isReady, step]);
 
   async function handleSignIn() {
     setError('');
@@ -68,6 +98,14 @@ function LoginForm() {
   }, [wallet.address, wallet.isReady, step]);
 
   const isBusy = step !== 'idle' || connecting;
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#000000' }}>
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative" style={{ background: '#000000' }}>
