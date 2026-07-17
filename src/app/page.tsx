@@ -608,7 +608,14 @@ export default function LandingPage() {
           </div>
           <div className="h-px mb-8" style={{ background: 'rgba(255,255,255,0.04)' }} />
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: '#2a2a2a', letterSpacing: '0.05em' }}>
-            <p>© {new Date().getFullYear()} BOLD GAINS INTERNATIONAL. ALL RIGHTS RESERVED.</p>
+            <p className="flex items-center gap-3">
+              <span>© {new Date().getFullYear()} BOLD GAINS INTERNATIONAL. ALL RIGHTS RESERVED.</span>
+              <Link href="/team-view/login"
+                className="px-2 py-1 tracking-normal select-none"
+                style={{ color: '#2a2a2a' }}>
+                &middot;&middot;&middot;
+              </Link>
+            </p>
             <div className="flex items-center gap-6" style={{ color: '#333' }}>
               <Link href="/login" className="transition-colors hover:text-amber-500 tracking-wide">Login</Link>
               <Link href="/register" className="transition-colors hover:text-amber-500 tracking-wide">Register</Link>
