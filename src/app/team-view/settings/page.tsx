@@ -72,18 +72,17 @@ export default function TeamViewSettingsPage() {
         </div>
         <div className="mt-4 flex gap-3 flex-wrap">
           {CONTRACT_ADDRESS && (
-            <a href={`https://bscscan.com/address/${CONTRACT_ADDRESS}#code`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+            <button disabled
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg opacity-40 cursor-not-allowed"
               style={{ background: 'rgba(202,138,4,0.1)', color: '#f59e0b', border: '1px solid rgba(202,138,4,0.25)' }}>
               <ExternalLink className="w-3.5 h-3.5" /> View Contract on BscScan
-            </a>
+            </button>
           )}
-          <a href="https://sourcify.dev/#/lookup/0xEF58925c73bE24cb5DC52D5029BAc9653B5B5344"
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+          <button disabled
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg opacity-40 cursor-not-allowed"
             style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.25)' }}>
             <ExternalLink className="w-3.5 h-3.5" /> Sourcify Verification
-          </a>
+          </button>
         </div>
       </div>
 

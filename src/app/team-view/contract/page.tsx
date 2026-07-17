@@ -109,11 +109,11 @@ export default function TeamViewContractPage() {
               <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider">Contract · BSC Mainnet</p>
               <p className="font-mono text-amber-400 text-sm break-all">{info.contractAddress}</p>
             </div>
-            <a href={`https://bscscan.com/address/${info.contractAddress}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap"
+            <button disabled
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap opacity-40 cursor-not-allowed"
               style={{ background: 'rgba(202,138,4,0.1)', color: '#f59e0b', border: '1px solid rgba(202,138,4,0.25)' }}>
               <ExternalLink className="w-3.5 h-3.5" /> BscScan
-            </a>
+            </button>
           </div>
         </div>
       )}
