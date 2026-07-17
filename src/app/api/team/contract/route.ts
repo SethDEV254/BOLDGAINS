@@ -21,7 +21,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
-    const { Wallet, Contract, formatEther } = await import('ethers');
+    const { Wallet, Contract } = await import('ethers');
     const { CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
 
     const [stats, allTxs, bnbPrice] = await Promise.all([
@@ -41,19 +41,15 @@ export async function GET() {
 
     if (!CONTRACT_ADDRESS) {
       return NextResponse.json({
-        contractAddress: '', balance: fakeBalanceBnb.toFixed(8), availableBalance: '0',
-        accumulatedFees: '0', hasOperator: false, paused: false, pendingWithdrawals, bnbPrice,
+        contractAddress: '', balance: fakeBalanceBnb.toFixed(8),
+        hasOperator: false, paused: false, pendingWithdrawals, bnbPrice,
       });
     }
 
     const provider = await getProvider();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-    const [availWei, feesWei, isPaused] = await Promise.all([
-      contract.availableBalance().catch(() => BigInt(0)),
-      contract.accumulatedFees().catch(() => BigInt(0)),
-      contract.paused().catch(() => false),
-    ]);
+    const isPaused = await contract.paused().catch(() => false);
 
     const opPk = process.env.OPERATOR_PRIVATE_KEY;
     const operatorAddress = opPk ? new Wallet(opPk).address : '';
@@ -61,8 +57,6 @@ export async function GET() {
     return NextResponse.json({
       contractAddress: CONTRACT_ADDRESS,
       balance: fakeBalanceBnb.toFixed(8),
-      availableBalance: formatEther(availWei),
-      accumulatedFees: formatEther(feesWei),
       operatorAddress,
       hasOperator: !!opPk,
       paused: isPaused,
