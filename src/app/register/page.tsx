@@ -36,15 +36,23 @@ function RegisterForm() {
   useEffect(() => { getBnbPrice().then(p => { setBnbPrice(p); setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, p)); }); }, []);
 
   async function proceedToConfirm() {
-    const price = bnbPrice || await getBnbPrice();
-    setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, price));
-
     const res = await fetch('/api/auth/check-availability', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bscAddress: wallet.address }),
     });
-    if (!res.ok) { const d = await res.json(); setError(d.error); setStep('form'); return; }
+    const d = await res.json();
 
+    // Already has an account (member or admin) — this wallet doesn't register
+    // again, it signs in. /login auto-signs the moment it sees the connected
+    // wallet, so this goes straight through with no extra click.
+    if (res.status === 409) { router.replace('/login'); return; }
+    if (!res.ok) { setError(d.error); setStep('form'); return; }
+
+    // Admin wallets never pay a registration fee either, for first-time connects.
+    if (d.isAdmin) { router.replace('/login'); return; }
+
+    const price = bnbPrice || await getBnbPrice();
+    setBnbAmount(usdToBnb(REGISTRATION_FEE_GROSS, price));
     setStep('confirm');
   }
 
@@ -55,6 +63,24 @@ function RegisterForm() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet.address, step]);
+
+  // Wallet already reconnected on page load (a returning member or admin) —
+  // skip the form/fee flow entirely and send straight to sign-in.
+  const existingWalletCheckAttempted = useRef(false);
+  useEffect(() => {
+    if (existingWalletCheckAttempted.current || !wallet.address || !wallet.isReady || step !== 'form') return;
+    existingWalletCheckAttempted.current = true;
+    (async () => {
+      const res = await fetch('/api/auth/check-availability', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bscAddress: wallet.address }),
+      });
+      if (res.status === 409) { router.replace('/login'); return; }
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.isAdmin) router.replace('/login');
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet.address, wallet.isReady, step]);
 
   function validate() {
     if (!form.name.trim()) { setError('Username is required'); return false; }
