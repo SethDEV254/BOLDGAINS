@@ -11,6 +11,7 @@ type ContractInfo = {
   contractAddress: string;
   balance: string;
   availableBalance: string;
+  accumulatedFees: string;
   operatorAddress: string;
   hasOperator: boolean;
   paused: boolean;
@@ -78,6 +79,7 @@ export default function ContractPage() {
   const bnbPrice = info.bnbPrice;
   const balUsd  = parseFloat(info.balance) * bnbPrice;
   const availUsd = parseFloat(info.availableBalance) * bnbPrice;
+  const feesUsd = parseFloat(info.accumulatedFees) * bnbPrice;
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -116,7 +118,7 @@ export default function ContractPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="stat-card rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)' }}>
@@ -133,10 +135,21 @@ export default function ContractPage() {
             <div className="p-2 rounded-xl" style={{ background: 'rgba(16,185,129,0.12)' }}>
               <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
             </div>
-            <span className="text-xs text-gray-500 uppercase tracking-wider">Fees Available</span>
+            <span className="text-xs text-gray-500 uppercase tracking-wider">Available for Payouts</span>
           </div>
           <p className="text-2xl font-black text-emerald-400">{parseFloat(info.availableBalance).toFixed(4)} BNB</p>
           <p className="text-xs text-gray-500 mt-1">≈ ${availUsd.toFixed(2)} USD</p>
+        </div>
+
+        <div className="stat-card rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 rounded-xl" style={{ background: 'rgba(59,130,246,0.12)' }}>
+              <ArrowDownLeft className="w-4 h-4 text-blue-400" />
+            </div>
+            <span className="text-xs text-gray-500 uppercase tracking-wider">Accumulated Fees</span>
+          </div>
+          <p className="text-2xl font-black text-blue-400">{parseFloat(info.accumulatedFees).toFixed(4)} BNB</p>
+          <p className="text-xs text-gray-500 mt-1">≈ ${feesUsd.toFixed(2)} USD</p>
         </div>
 
         <div className="stat-card rounded-2xl p-5">
@@ -202,11 +215,11 @@ export default function ContractPage() {
 
           {/* Collect fees */}
           <button onClick={() => call('collectFees')}
-            disabled={!info.hasOperator || !!working || parseFloat(info.availableBalance) === 0}
+            disabled={!info.hasOperator || !!working || parseFloat(info.accumulatedFees) === 0}
             className="flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm disabled:opacity-40 transition-all"
             style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#34d399' }}>
             {working === 'collectFees' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownLeft className="w-4 h-4" />}
-            Collect Fees ({parseFloat(info.availableBalance).toFixed(4)} BNB)
+            Collect Fees ({parseFloat(info.accumulatedFees).toFixed(4)} BNB)
           </button>
 
           {/* Emergency withdraw */}

@@ -31,14 +31,15 @@ export async function GET() {
     const { CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
 
     if (!CONTRACT_ADDRESS)
-      return NextResponse.json({ contractAddress: '', balance: '0', availableBalance: '0', hasOperator: false, paused: false, bnbPrice: await getBnbPrice() });
+      return NextResponse.json({ contractAddress: '', balance: '0', availableBalance: '0', accumulatedFees: '0', hasOperator: false, paused: false, bnbPrice: await getBnbPrice() });
 
     const provider = await getProvider();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-    const [balWei, availWei, isPaused, chainId, allTxs, bnbPrice] = await Promise.all([
+    const [balWei, availWei, feesWei, isPaused, chainId, allTxs, bnbPrice] = await Promise.all([
       provider.getBalance(CONTRACT_ADDRESS),
       contract.availableBalance().catch(() => BigInt(0)),
+      contract.accumulatedFees().catch(() => BigInt(0)),
       contract.paused().catch(() => false),
       provider.getNetwork().then(n => n.chainId),
       getAllTransactions(500),
@@ -58,6 +59,7 @@ export async function GET() {
       contractAddress: CONTRACT_ADDRESS,
       balance: formatEther(balWei),
       availableBalance: formatEther(availWei),
+      accumulatedFees: formatEther(feesWei),
       operatorAddress,
       ownerAddress,
       hasOperator: !!opPk,
