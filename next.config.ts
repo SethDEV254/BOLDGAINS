@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   transpilePackages: [
@@ -11,7 +12,10 @@ const nextConfig: NextConfig = {
     '@wagmi/connectors',
     '@wagmi/core',
   ],
-  turbopack: {},
+  // Without this, Turbopack walks up to the nearest package-lock.json it finds — which on
+  // this machine is C:\Users\PC, turning the whole home directory into the "project root"
+  // it file-watches and resolves modules against, causing multi-minute compile hangs.
+  turbopack: { root: path.join(__dirname) },
 };
 
 export default nextConfig;

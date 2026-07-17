@@ -4,13 +4,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { LayoutDashboard, Users, Shield, LogOut, ChevronRight, ArrowDownUp, BarChart2, Home, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, LogOut, ChevronRight, ArrowDownUp, BarChart2, Home, Menu, X, Cpu, Settings } from 'lucide-react';
 
 const NAV = [
   { href: '/team-view',              icon: LayoutDashboard, label: 'Overview' },
   { href: '/team-view/members',      icon: Users,           label: 'Members' },
   { href: '/team-view/transactions', icon: ArrowDownUp,     label: 'Transactions' },
+  { href: '/team-view/contract',     icon: Cpu,             label: 'Contract' },
   { href: '/team-view/reports',      icon: BarChart2,       label: 'Reports' },
+  { href: '/team-view/settings',     icon: Settings,        label: 'Settings' },
   { href: '/',                       icon: Home,            label: 'Home' },
 ];
 

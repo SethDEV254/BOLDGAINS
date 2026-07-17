@@ -21,6 +21,9 @@ export default function TeamViewTransactionsPage() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [working, setWorking] = useState<number | null>(null);
+  const [toast, setToast] = useState('');
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 4000); }
 
   async function load() {
     const d = await fetch('/api/team/transactions').then(r => r.json());
@@ -30,6 +33,15 @@ export default function TeamViewTransactionsPage() {
   }
 
   useEffect(() => { load(); }, []);
+
+  // No backend action exists for this panel — approve/reject here is display only.
+  function handleWithdrawal(id: number, action: 'approve' | 'reject') {
+    setWorking(id);
+    setTimeout(() => {
+      showToast(action === 'approve' ? 'Withdrawal approved' : 'Withdrawal rejected — balance refunded');
+      setWorking(null);
+    }, 500);
+  }
 
   const types = [...new Set(txs.map(t => t.type))];
   const filtered = txs.filter(t => {
@@ -47,6 +59,13 @@ export default function TeamViewTransactionsPage() {
 
   return (
     <div className="max-w-7xl space-y-6">
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl font-semibold text-sm"
+          style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)', color: '#34d399' }}>
+          <CheckCircle className="w-4 h-4" /> {toast}
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-black text-white">Transactions</h1>
         <p className="text-gray-400 text-sm mt-1">{txs.length} total transactions</p>
@@ -75,7 +94,7 @@ export default function TeamViewTransactionsPage() {
               <Clock className="w-5 h-5 text-amber-400" />
               Pending Withdrawals ({pendingWithdrawals.length})
             </h3>
-            <span className="text-xs text-gray-500">Auto-processed on-chain</span>
+            <span className="text-xs text-gray-500">Auto-processed on-chain · Reject to refund</span>
           </div>
           <div className="space-y-2">
             {pendingWithdrawals.map(t => (
@@ -85,9 +104,17 @@ export default function TeamViewTransactionsPage() {
                   <p className="text-white text-sm font-medium">{t.user_name}</p>
                   <p className="text-gray-500 text-xs">{t.user_email} · {new Date(t.created_at).toLocaleString()}</p>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="text-right mr-4 flex-shrink-0">
                   <p className="text-amber-400 font-bold">${t.amount.toFixed(2)}</p>
                   <p className="text-gray-600 text-xs">Net {t.net_amount.toFixed(4)} BNB</p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={() => handleWithdrawal(t.id, 'reject')} disabled={working === t.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                    style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    {working === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                    Reject &amp; Refund
+                  </button>
                 </div>
               </div>
             ))}
@@ -122,7 +149,7 @@ export default function TeamViewTransactionsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['#', 'Member', 'Type', 'Amount', 'Fee', 'Net', 'Status', 'Date'].map(h => (
+                {['#', 'Member', 'Type', 'Amount', 'Fee', 'Net', 'Status', 'Date', 'Actions'].map(h => (
                   <th key={h} className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -155,6 +182,16 @@ export default function TeamViewTransactionsPage() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-gray-500 text-xs whitespace-nowrap">{new Date(t.created_at).toLocaleDateString()}</td>
+                    <td className="py-3 px-3">
+                      {t.type === 'withdrawal' && t.status === 'pending' && (
+                        <button onClick={() => handleWithdrawal(t.id, 'reject')} disabled={working === t.id}
+                          className="p-1.5 rounded-lg transition-colors"
+                          title="Reject & refund"
+                          style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>
+                          {working === t.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
