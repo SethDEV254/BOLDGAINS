@@ -357,14 +357,19 @@ export async function rejectWithdrawal(txId: number) {
 
 export async function getGrowthData() {
   const sql = await getDb();
-  const [byDay, earningsByType, txByType] = await Promise.all([
+  const [byDay, earningsByType, txByType, packageDistribution] = await Promise.all([
     sql`
       SELECT DATE(created_at) as day, COUNT(*) as count
       FROM users WHERE role != 'admin'
       GROUP BY DATE(created_at) ORDER BY day DESC LIMIT 30
     `,
     sql`SELECT type, SUM(amount) as total FROM earnings GROUP BY type`,
-    sql`SELECT type, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM transactions GROUP BY type`,
+    // status = 'completed' — rejected/failed withdrawals are refunded in full and never
+    // actually moved, so they'd otherwise inflate the withdrawal volume bar.
+    sql`SELECT type, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM transactions
+        WHERE status = 'completed' GROUP BY type`,
+    sql`SELECT package_level, COUNT(*) as count FROM users
+        WHERE role != 'admin' AND package_level > 0 GROUP BY package_level`,
   ]);
-  return { byDay: [...byDay].reverse(), earningsByType, txByType };
+  return { byDay: [...byDay].reverse(), earningsByType, txByType, packageDistribution };
 }

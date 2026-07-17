@@ -251,13 +251,13 @@ export default function TeamViewReportsPage() {
         <h3 className="text-white font-bold mb-5">Package Distribution</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {PACKAGES.map(pkg => {
-            const count = (growth.txByType || []).find((t: any) => t.type === 'registration')?.count || 0;
+            const count = Number((growth.packageDistribution || []).find((p: any) => Number(p.package_level) === pkg.level)?.count) || 0;
             return (
               <div key={pkg.level} className="text-center p-4 rounded-xl transition-all hover:scale-105"
                 style={{ background: `${pkg.color}08`, border: `1px solid ${pkg.color}20` }}>
                 <p className="text-xs font-semibold mb-2" style={{ color: pkg.color }}>{pkg.name}</p>
-                <p className="text-2xl font-black text-white">${pkg.price.toLocaleString()}</p>
-                <p className="text-xs mt-1" style={{ color: `${pkg.color}80` }}>{pkg.products} products</p>
+                <p className="text-2xl font-black text-white">{count}</p>
+                <p className="text-xs mt-1" style={{ color: `${pkg.color}80` }}>members</p>
               </div>
             );
           })}

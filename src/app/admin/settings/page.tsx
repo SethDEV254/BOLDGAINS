@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Settings, DollarSign, Percent, Shield, Copy, Check,
   ExternalLink, Info, Package, Wallet,
@@ -46,6 +46,14 @@ function InfoRow({ label, value, color = '#9ca3af' }: { label: string; value: st
 }
 
 export default function SettingsPage() {
+  const [ownerAddress, setOwnerAddress] = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/contract').then(r => r.json()).then(d => {
+      if (d.ownerAddress) setOwnerAddress(d.ownerAddress);
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="max-w-4xl space-y-6">
       <div>
@@ -60,7 +68,7 @@ export default function SettingsPage() {
         </h3>
         <div className="space-y-3">
           <CopyField label="Contract Address (BSC Mainnet)" value={CONTRACT_ADDRESS} />
-          <CopyField label="Deployer / Owner Wallet" value="0xAf6c12e51A09376F448F3301d027b6A7bd76962A" />
+          <CopyField label="Deployer / Owner Wallet" value={ownerAddress} />
         </div>
         <div className="mt-4 flex gap-3 flex-wrap">
           {CONTRACT_ADDRESS && (

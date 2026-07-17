@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Loader2, Search, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 
 const TX_COLORS: Record<string, string> = {
   deposit: '#10b981', withdrawal: '#f59e0b', registration: '#3b82f6',
@@ -12,6 +12,7 @@ const STATUS_STYLE: Record<string, { color: string; bg: string; border: string; 
   completed: { color: '#34d399', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', icon: CheckCircle },
   pending: { color: '#fbbf24', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', icon: Clock },
   rejected: { color: '#f87171', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)', icon: XCircle },
+  failed: { color: '#fb923c', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.3)', icon: AlertTriangle },
 };
 
 export default function TeamViewTransactionsPage() {
@@ -40,6 +41,7 @@ export default function TeamViewTransactionsPage() {
   });
 
   const pendingWithdrawals = txs.filter(t => t.type === 'withdrawal' && t.status === 'pending');
+  const completedTxs = txs.filter(t => t.status === 'completed');
 
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 text-amber-400 animate-spin" /></div>;
 
@@ -53,10 +55,10 @@ export default function TeamViewTransactionsPage() {
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Deposits', value: `$${txs.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0).toFixed(0)}`, color: '#10b981' },
-          { label: 'Total Withdrawals', value: `$${txs.filter(t => t.type === 'withdrawal').reduce((s, t) => s + t.amount, 0).toFixed(0)}`, color: '#f59e0b' },
+          { label: 'Total Deposits', value: `$${completedTxs.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0).toFixed(0)}`, color: '#10b981' },
+          { label: 'Total Withdrawals', value: `$${completedTxs.filter(t => t.type === 'withdrawal').reduce((s, t) => s + t.amount, 0).toFixed(0)}`, color: '#f59e0b' },
           { label: 'Pending Withdrawals', value: pendingWithdrawals.length, color: '#fbbf24' },
-          { label: 'Fees Collected', value: `$${txs.reduce((s, t) => s + (t.fee || 0), 0).toFixed(0)}`, color: '#a78bfa' },
+          { label: 'Fees Collected', value: `$${completedTxs.reduce((s, t) => s + (t.fee || 0), 0).toFixed(0)}`, color: '#a78bfa' },
         ].map((s, i) => (
           <div key={i} className="stat-card rounded-2xl p-4">
             <p className="text-gray-500 text-xs mb-1">{s.label}</p>
@@ -112,6 +114,7 @@ export default function TeamViewTransactionsPage() {
             <option value="completed" style={{ background: '#0f0801' }}>Completed</option>
             <option value="pending" style={{ background: '#0f0801' }}>Pending</option>
             <option value="rejected" style={{ background: '#0f0801' }}>Rejected</option>
+            <option value="failed" style={{ background: '#0f0801' }}>Failed</option>
           </select>
         </div>
 
@@ -127,7 +130,7 @@ export default function TeamViewTransactionsPage() {
             <tbody>
               {filtered.map((t, i) => {
                 const color = TX_COLORS[t.type] || '#9ca3af';
-                const statusStyle = STATUS_STYLE[t.status] || STATUS_STYLE.completed;
+                const statusStyle = STATUS_STYLE[t.status] || { color: '#9ca3af', bg: 'rgba(156,163,175,0.12)', border: 'rgba(156,163,175,0.3)', icon: Clock };
                 const StatusIcon = statusStyle.icon;
                 return (
                   <tr key={t.id} className="border-t border-white/[0.03] hover:bg-white/[0.015] transition-colors">
