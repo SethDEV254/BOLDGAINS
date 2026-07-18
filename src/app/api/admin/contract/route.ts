@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin';
 import { getAllTransactions, approveWithdrawal, rejectWithdrawal, getUserById } from '@/lib/db';
 import { getBnbPrice } from '@/lib/bnb-price';
 
 async function guard() {
-  const s = await getSession();
-  if (!s || s.role !== 'admin') return null;
-  return s;
+  return requireAdmin();
 }
 
 async function getProvider() {
@@ -36,15 +34,20 @@ export async function GET() {
     const provider = await getProvider();
     const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-    const [balWei, availWei, feesWei, isPaused, chainId, allTxs, bnbPrice] = await Promise.all([
+    const [balWei, feesWei, isPaused, chainId, allTxs, bnbPrice] = await Promise.all([
       provider.getBalance(CONTRACT_ADDRESS),
-      contract.availableBalance().catch(() => BigInt(0)),
       contract.accumulatedFees().catch(() => BigInt(0)),
       contract.paused().catch(() => false),
       provider.getNetwork().then(n => n.chainId),
       getAllTransactions(500),
       getBnbPrice(),
     ]);
+
+    // Derived from the wallet's actual on-chain balance (the same number BscScan
+    // shows), not the contract's own availableBalance() accessor — its internal
+    // bookkeeping can drift from the real balance, which made "available + fees"
+    // not add up to what the dashboard showed as the contract total.
+    const availWei = balWei > feesWei ? balWei - feesWei : BigInt(0);
 
     const opPk = process.env.OPERATOR_PRIVATE_KEY;
     const ownPk = process.env.OWNER_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY;
