@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { timingSafeEqual } from 'crypto';
 import { createTeamSession, TEAM_COOKIE_NAME } from '@/lib/team-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 function safeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -12,6 +13,9 @@ function safeEqual(a: string, b: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, 'team-login', 5, 300);
+    if (limited) return limited;
+
     const { email, password } = await req.json();
     const expectedEmail = process.env.TEAM_VIEW_EMAIL || '';
     const expectedPassword = process.env.TEAM_VIEW_PASSWORD || '';

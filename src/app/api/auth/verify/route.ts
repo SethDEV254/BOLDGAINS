@@ -4,6 +4,7 @@ import { getUserByBscAddress, getUserByName, createWalletUser, getUserById } fro
 import { createSession, generateReferralCode } from '@/lib/auth';
 import { isAdminAddress } from '@/lib/admin';
 import { NONCE_COOKIE, verifyWalletSignature } from '@/lib/wallet-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 async function provisionAdmin(address: string) {
   let name = `Admin ${address.slice(0, 6)}`;
@@ -24,6 +25,9 @@ async function provisionAdmin(address: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, 'auth-verify', 15, 60);
+    if (limited) return limited;
+
     const { address, signature } = await req.json();
     if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address) || !signature)
       return NextResponse.json({ error: 'Address and signature required' }, { status: 400 });

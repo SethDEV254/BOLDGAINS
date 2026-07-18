@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin';
 import { getAllUsers, getSystemStats } from '@/lib/db';
 import { getBnbPrice, bnbToUsd } from '@/lib/bnb-price';
 
 export async function GET() {
-  const session = await getSession();
-  if (!session || session.role !== 'admin')
+  const session = await requireAdmin();
+  if (!session)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const [rawUsers, rawStats, bnbPrice] = await Promise.all([getAllUsers(), getSystemStats(), getBnbPrice()]);

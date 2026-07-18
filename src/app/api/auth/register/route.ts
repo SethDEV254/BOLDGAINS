@@ -8,9 +8,13 @@ import { createSession, generateReferralCode } from '@/lib/auth';
 import { isAdminAddress } from '@/lib/admin';
 import { REGISTRATION_REFERRAL_RATE } from '@/lib/packages';
 import { distributePayouts, type PayoutItem } from '@/lib/payout';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, 'auth-register', 10, 60);
+    if (limited) return limited;
+
     const { name, bscAddress, refWallet, txHash } = await req.json();
 
     if (!name || !bscAddress || !txHash)

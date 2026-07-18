@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin';
 import { setUserStatus, adminSetPackage, adminAdjustBalance, deleteUser, getUserById } from '@/lib/db';
 import { getBnbPrice, usdToBnb } from '@/lib/bnb-price';
 
 async function guard() {
-  const session = await getSession();
-  if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const session = await requireAdmin();
+  if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   return session;
 }
 

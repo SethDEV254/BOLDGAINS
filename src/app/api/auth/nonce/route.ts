@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 import { NONCE_COOKIE, NONCE_TTL_MS, buildSignInMessage } from '@/lib/wallet-auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, 'auth-nonce', 20, 60);
+  if (limited) return limited;
+
   const { address } = await req.json();
   if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address))
     return NextResponse.json({ error: 'Invalid address' }, { status: 400 });

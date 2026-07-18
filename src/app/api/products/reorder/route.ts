@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { getUserById, createTransaction, updateWalletBalance } from '@/lib/db';
+import { getUserById, createTransaction, deductWalletBalance } from '@/lib/db';
 import { REORDER_PACKAGES, REORDER_LEVEL_DISTRIBUTION, REORDER_BONUS_RATES } from '@/lib/packages';
 import { distributePayouts, PayoutItem } from '@/lib/payout';
 import { sendToPool } from '@/lib/pool-payout';
@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
   const bnbPrice = await getBnbPrice();
   const pkgBnb = pkg.price / bnbPrice;
 
-  if (user.wallet_balance < pkgBnb)
-    return NextResponse.json({ error: 'Insufficient wallet balance' }, { status: 400 });
+  const deducted = await deductWalletBalance(session.userId, pkgBnb);
+  if (!deducted) return NextResponse.json({ error: 'Insufficient wallet balance' }, { status: 400 });
 
   await createTransaction({
     userId: session.userId,
@@ -36,8 +36,6 @@ export async function POST(req: NextRequest) {
     netAmount: pkgBnb,
     description: `BoldGlow™ Reorder — ${pkg.qty} unit${pkg.qty > 1 ? 's' : ''}`,
   });
-
-  await updateWalletBalance(session.userId, -pkgBnb);
 
   // Walk up to 10 upline levels and pay each their share of the 15%
   const payouts: PayoutItem[] = [];

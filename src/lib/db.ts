@@ -59,11 +59,20 @@ async function ensureInit() {
       )
     `;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS rate_limit_attempts (
+        id SERIAL PRIMARY KEY,
+        key TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+
     await sql`CREATE INDEX IF NOT EXISTS idx_users_referral ON users(referral_code)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_users_sponsor ON users(sponsor_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_transactions_ref ON transactions(reference)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_rate_limit_key_time ON rate_limit_attempts(key, created_at)`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email))`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_name_lower ON users (LOWER(name))`;
 
@@ -149,6 +158,41 @@ export async function updateUserPackage(userId: number, packageLevel: number) {
 export async function updateWalletBalance(userId: number, amount: number) {
   const sql = await getDb();
   await sql`UPDATE users SET wallet_balance = wallet_balance + ${amount} WHERE id = ${userId}`;
+}
+
+// Atomic check-and-debit: the WHERE guard makes the balance check and the
+// deduction a single database operation, so concurrent requests can't both
+// pass a stale balance check before either one commits.
+export async function deductWalletBalance(userId: number, amount: number): Promise<boolean> {
+  const sql = await getDb();
+  const rows = await sql`
+    UPDATE users SET wallet_balance = wallet_balance - ${amount}
+    WHERE id = ${userId} AND wallet_balance >= ${amount}
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+
+// Sliding-window rate limit backed by Postgres so it works correctly across
+// serverless instances (an in-memory counter would reset per cold start and
+// wouldn't be shared between concurrent function invocations).
+export async function checkRateLimit(
+  key: string, maxAttempts: number, windowSeconds: number,
+): Promise<boolean> {
+  const sql = await getDb();
+  await sql`INSERT INTO rate_limit_attempts (key) VALUES (${key})`;
+
+  const rows = await sql`
+    SELECT COUNT(*)::int AS count FROM rate_limit_attempts
+    WHERE key = ${key} AND created_at > NOW() - (${windowSeconds} || ' seconds')::interval
+  `;
+
+  // Opportunistic cleanup — avoids unbounded table growth without a cron job.
+  if (Math.random() < 0.01) {
+    await sql`DELETE FROM rate_limit_attempts WHERE created_at < NOW() - INTERVAL '1 day'`;
+  }
+
+  return Number(rows[0].count) <= maxAttempts;
 }
 
 export async function addEarning(userId: number, type: string, amount: number, sourceUserId?: number, description?: string) {

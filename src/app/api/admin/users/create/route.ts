@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { requireAdmin } from '@/lib/admin';
 import { getUserByName, getUserByBscAddress, createWalletUser } from '@/lib/db';
 import { generateReferralCode } from '@/lib/auth';
 import { PACKAGES } from '@/lib/packages';
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== 'admin')
+  const session = await requireAdmin();
+  if (!session)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { name, bscAddress, sponsorWallet, packageLevel } = await req.json();

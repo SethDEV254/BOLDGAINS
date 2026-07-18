@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { getUserById, updateWalletBalance, createTransaction, completeTransaction, failTransaction } from '@/lib/db';
+import { getUserById, deductWalletBalance, updateWalletBalance, createTransaction, completeTransaction, failTransaction } from '@/lib/db';
 import { BONUS_RATES, MIN_WITHDRAWAL_NET_USD } from '@/lib/packages';
 import { getBnbPrice } from '@/lib/bnb-price';
 
@@ -16,8 +16,6 @@ export async function POST(req: NextRequest) {
 
   const user = await getUserById(session.userId);
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  if (user.wallet_balance < amount)
-    return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
 
   const fee = amount * BONUS_RATES.management_fee_withdrawal;
   const net = amount - fee;
@@ -29,7 +27,8 @@ export async function POST(req: NextRequest) {
       error: `Minimum withdrawal net is $${MIN_WITHDRAWAL_NET_USD} USD. Your net would be $${netUsd.toFixed(2)} USD.`,
     }, { status: 400 });
 
-  await updateWalletBalance(session.userId, -amount);
+  const deducted = await deductWalletBalance(session.userId, amount);
+  if (!deducted) return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
 
   const txId = await createTransaction({
     userId: session.userId, type: 'withdrawal',
@@ -39,10 +38,11 @@ export async function POST(req: NextRequest) {
     status: 'pending',
   });
 
-  // Fire-and-forget on-chain transfer — sequential with other operator txs
+  // Runs after the response is sent (after() keeps the invocation alive until
+  // it settles) — sequential with other operator txs
   const netAmount = net;
   const ref = `withdraw-${txId}`;
-  (async () => {
+  after(async () => {
     try {
       const { JsonRpcProvider, Wallet, Contract, parseUnits } = await import('ethers');
       const { BSC_RPC, CONTRACT_ADDRESS, CONTRACT_ABI } = await import('@/lib/contract');
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       // Refund balance on failure
       await updateWalletBalance(session.userId, amount);
     }
-  })();
+  });
 
   return NextResponse.json({ success: true, amount, fee, net });
 }
