@@ -4,11 +4,11 @@ import { getAllUsers, getSystemStats } from '@/lib/db';
 import { getBnbPrice, bnbToUsd } from '@/lib/bnb-price';
 
 export async function GET() {
-  const session = await requireAdmin();
+  const [session, rawUsers, rawStats, bnbPrice] = await Promise.all([
+    requireAdmin(), getAllUsers(), getSystemStats(), getBnbPrice(),
+  ]);
   if (!session)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
-  const [rawUsers, rawStats, bnbPrice] = await Promise.all([getAllUsers(), getSystemStats(), getBnbPrice()]);
 
   const users = rawUsers.map((u: any) => ({
     ...u,

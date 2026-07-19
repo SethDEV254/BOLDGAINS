@@ -4,9 +4,10 @@ import { getGrowthData, getSystemStats } from '@/lib/db';
 import { getBnbPrice, bnbToUsd } from '@/lib/bnb-price';
 
 export async function GET() {
-  const session = await requireAdmin();
+  const [session, rawGrowth, rawStats, bnbPrice] = await Promise.all([
+    requireAdmin(), getGrowthData(), getSystemStats(), getBnbPrice(),
+  ]);
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const [rawGrowth, rawStats, bnbPrice] = await Promise.all([getGrowthData(), getSystemStats(), getBnbPrice()]);
 
   const growth = {
     ...rawGrowth,

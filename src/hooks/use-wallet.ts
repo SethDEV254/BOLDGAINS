@@ -16,7 +16,7 @@ async function getEthersSigner(walletClient: any): Promise<JsonRpcSigner> {
 }
 
 export function useWallet() {
-  const { open } = useAppKit();
+  const { open, close } = useAppKit();
   const { address, isConnected, isConnecting, chain } = useAccount();
   const { disconnect } = useDisconnect();
   const { data: balance } = useBalance({ address, chainId: BSC_CHAIN_ID });
@@ -78,6 +78,7 @@ export function useWallet() {
 
   return {
     open: openWallet,
+    closeModal: () => close(),
     address: address ?? null,
     bnbBalance,
     isConnected,

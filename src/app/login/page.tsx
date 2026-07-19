@@ -4,10 +4,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Wallet, Loader2, Check } from 'lucide-react';
+import { Wallet, Loader2, Check, AlertTriangle } from 'lucide-react';
 import { useWallet } from '@/hooks/use-wallet';
 
 type Step = 'idle' | 'connecting' | 'signing';
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
+  ]);
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -17,6 +24,7 @@ function LoginForm() {
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState('');
   const [checkingSession, setCheckingSession] = useState(true);
+  const [switching, setSwitching] = useState(false);
 
   // wagmi's isConnecting can flip true on the client during auto-reconnect before the
   // server ever sees it — gate on mount so the first client render matches SSR exactly.
@@ -86,9 +94,31 @@ function LoginForm() {
 
   function handleConnectClick() {
     setError('');
+    if (wallet.address && wallet.isWrongChain) { handleSwitchNetwork(); return; }
     if (wallet.address && wallet.isReady) { handleSignIn(); return; }
     setStep('connecting');
     wallet.open();
+  }
+
+  // AppKit's own "Switch Network" modal can hang on some in-app wallet browsers
+  // (the switch request never resolves). This gives a way out: close whatever
+  // modal state AppKit is in, try the wagmi switch directly with a hard timeout,
+  // and surface a real error instead of leaving the user stuck on a spinner.
+  async function handleSwitchNetwork() {
+    setError('');
+    setSwitching(true);
+    try {
+      await wallet.closeModal();
+      await withTimeout(
+        wallet.switchToBSC(),
+        15000,
+        'Network switch timed out. Open your wallet app, switch its network to BNB Smart Chain manually, then reconnect.',
+      );
+    } catch (e: any) {
+      setError(e?.shortMessage || e?.message || 'Failed to switch network.');
+    } finally {
+      setSwitching(false);
+    }
   }
 
   // Once the wallet finishes connecting after a click, trigger the signature step.
@@ -97,7 +127,8 @@ function LoginForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallet.address, wallet.isReady, step]);
 
-  const isBusy = step !== 'idle' || connecting;
+  const isBusy = step !== 'idle' || connecting || switching;
+  const wrongChain = !!wallet.address && wallet.isWrongChain;
 
   if (checkingSession) {
     return (
@@ -134,12 +165,25 @@ function LoginForm() {
             </div>
           )}
 
+          {wrongChain && (
+            <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+              <p className="text-amber-400 text-sm font-semibold flex items-center justify-center gap-1.5">
+                <AlertTriangle className="w-4 h-4" /> Wrong network
+              </p>
+              <p className="text-gray-400 text-xs mt-1">Bold Gains runs on BNB Smart Chain.</p>
+            </div>
+          )}
+
           <button type="button" onClick={handleConnectClick} disabled={isBusy}
             className="btn-gold w-full py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 text-base">
             {step === 'connecting' || connecting ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> Connecting Wallet…</>
+            ) : switching ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> Switching Network…</>
             ) : step === 'signing' ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> Confirm in Wallet…</>
+            ) : wrongChain ? (
+              <><AlertTriangle className="w-5 h-5" /> Switch to BNB Smart Chain</>
             ) : wallet.address ? (
               <><Check className="w-5 h-5" /> Sign In</>
             ) : (
@@ -151,6 +195,13 @@ function LoginForm() {
             <p className="text-center text-xs text-emerald-400 mt-4">
               Connected: {wallet.address.slice(0, 8)}…{wallet.address.slice(-6)}
             </p>
+          )}
+
+          {wallet.address && (
+            <button type="button" onClick={() => wallet.disconnect()}
+              className="w-full text-center text-xs text-gray-500 hover:text-gray-300 transition-colors mt-3">
+              Disconnect and try a different wallet
+            </button>
           )}
 
           <p className="text-center text-xs text-gray-600 mt-4">
