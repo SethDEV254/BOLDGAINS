@@ -13,6 +13,13 @@ createAppKit({
   projectId,
   networks: networks as any,
   defaultNetwork: networks[0],
+  // AppKit's own "Switch Network" modal blocks the whole screen and, on some
+  // in-app mobile wallet browsers, the switch request inside it never resolves
+  // — leaving no way out but Disconnect. Letting the connection through on any
+  // chain means our own in-page wrong-chain UI (use-wallet's isWrongChain +
+  // the login page's Switch to BNB Smart Chain button, which has a timeout
+  // and doesn't depend on this modal) is what the user actually sees.
+  allowUnsupportedChain: true,
   metadata: {
     name: 'Bold Gains',
     description: 'Build Your Empire — Premium MLM Platform on BSC',
