@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getUserByBscAddress, getUserByName, createWalletUser, getUserById } from '@/lib/db';
+import { getUserByBscAddress, getUserByName, createWalletUser, getUserById, promoteToAdmin } from '@/lib/db';
 import { createSession, generateReferralCode } from '@/lib/auth';
 import { isAdminAddress } from '@/lib/admin';
 import { NONCE_COOKIE, verifyWalletSignature } from '@/lib/wallet-auth';
@@ -50,6 +50,13 @@ export async function POST(req: NextRequest) {
         );
       user = await provisionAdmin(address);
       if (!user) return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    } else if (isAdminAddress(address) && user.role !== 'admin') {
+      // Wallet was allowlisted after this user already had a member account
+      // (e.g. registered before being made an admin) — the session below
+      // grants role: 'admin', so the DB record has to actually match it or
+      // every requireAdmin() re-check on /admin/* would reject the session.
+      await promoteToAdmin(user.id);
+      user.role = 'admin';
     }
 
     const status = user.status ?? 'active';

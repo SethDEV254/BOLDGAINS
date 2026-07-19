@@ -343,6 +343,11 @@ export async function setUserStatus(userId: number, status: 'active' | 'suspende
   await sql`UPDATE users SET status = ${status} WHERE id = ${userId}`;
 }
 
+export async function promoteToAdmin(userId: number) {
+  const sql = await getDb();
+  await sql`UPDATE users SET role = 'admin' WHERE id = ${userId}`;
+}
+
 export async function adminSetPackage(userId: number, packageLevel: number) {
   const sql = await getDb();
   await sql`UPDATE users SET package_level = ${packageLevel} WHERE id = ${userId}`;
