@@ -84,7 +84,8 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json();
-  const { action, txId, to, amount } = body;
+  const { action, txId, amount } = body;
+  const to = typeof body.to === 'string' ? body.to.trim() : body.to;
 
   const operatorPk = process.env.OPERATOR_PRIVATE_KEY;
   const ownerPk = process.env.OWNER_PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY || process.env.OPERATOR_PRIVATE_KEY;

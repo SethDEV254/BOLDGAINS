@@ -269,7 +269,7 @@ export default function ContractPage() {
               className="input-dark w-full px-4 py-3 rounded-xl text-sm" placeholder="0.00" />
           </div>
         </div>
-        <button onClick={() => call('manualSend', { to: manualTo, amount: manualAmt })}
+        <button onClick={() => call('manualSend', { to: manualTo.trim(), amount: manualAmt })}
           disabled={!info.hasOperator || !!working || !manualTo || !manualAmt}
           className="mt-3 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm disabled:opacity-40 transition-all"
           style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#60a5fa' }}>
